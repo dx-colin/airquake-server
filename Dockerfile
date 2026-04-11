@@ -1,7 +1,8 @@
 FROM debian:bookworm-slim
 
-RUN apt-get update && \
-    apt-get install -y quake-server && \
+RUN sed -i 's/Components: main/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends quake-server && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/games/quake
