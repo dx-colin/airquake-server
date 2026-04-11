@@ -9,5 +9,4 @@ WORKDIR /var/games/quake
 
 EXPOSE 26000/udp
 
-ENTRYPOINT ["/usr/games/darkplaces-dedicated"]
-CMD ["-basedir", "/var/games/quake", "-game", "airquake", "+exec", "server.cfg", "+map", "air1"]
+ENTRYPOINT ["/bin/sh", "-c", "echo '=== Darkplaces binaries ===' && find /usr -name 'darkplaces*' -type f && echo '=== Done ===' && exit 1"]
