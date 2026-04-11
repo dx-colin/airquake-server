@@ -9,5 +9,5 @@ WORKDIR /var/games/quake
 
 EXPOSE 26000/udp
 
-ENTRYPOINT ["quake-server"]
+ENTRYPOINT ["/usr/games/quake-server"]
 CMD ["-dedicated", "-game", "airquake", "+exec", "server.cfg", "+map", "air1"]
