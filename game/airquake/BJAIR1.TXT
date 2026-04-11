@@ -1,0 +1,17 @@
+Map: BJAIR1.BSP
+
+Author: Bjoern Drabeck (drabeck@netway.at)
+
+Description: Rather small level best suited for deathmatches. I have 
+tried to build it so that ground vehicles also have a chance to get 
+some frags ;-). So there are some places where you can hide, but there
+are no places where a skilled pilot can't go (fly) to. For your 
+information: Aircraft can land on all roads (even in the tunnel) and if
+you are a skillful pilot you can also land in the cave on the hill
+(near the "town"), this works best with the helo, the A10 and the X29.
+Repair points are in the hangars and weapons are all around the level.
+The helo can also land on top of the buildings in the city, but just 
+on the "pads" (the places where you find goodies).
+You can also play this level in single player, but I did not put very
+much effort in placing the vehicles, so I think they will not behave
+really "intelligent" - but try it anyway.

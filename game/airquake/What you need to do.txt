@@ -1,0 +1,124 @@
+
+ ASP Forum with SQL Support - Version 2.02
+===========================================
+
+This file can be downloaded at:
+  http://www.planetquake.com/dl/dl.asp?/airquakelevels/SQLForum2.zip
+
+What's new:
+ * Uses Version 2 of ASPForum (Smilies, More Information about stuff, Proper
+     signatures, word filtering etc.)
+ * SQL Support, with table creation file included
+ * Modify postings! - This version includes some additional admin files that
+     let you modify any posting (both topic messages and reply messages)
+ * and a couple of other things (spelling corrections(!) etc.)
+
+******************************************************
+NOTE: To create this new version, I have completely re-converted all the
+files - You will need to delete any old copies of SQLForum, including any
+SQL tables, and start again. I could write some more scripts to alter the
+table as necessary, and you are free to alter the tables yourself (to what
+is in the 'Generate Tables.sql' file), but because things were slightly
+different, I've decided not to try using the old database structure.
+Appologies for any inconvinience. 
+******************************************************
+
+
+ What you need to do:
+======================
+
+1) Get your SQL server's IP address, databasename, username and password
+and put these into the config.inc file (example shown in that file).
+
+2) Create the necessary tables on your SQL server - I've included a
+'Generate Tables.sql' file that should do the job.
+
+3) Upload the files to your web site (including the admin files in their
+directory)
+
+4) Add some categories and forums using the admin pages and hope it all
+works... :-) - You can use the 'Admin' logon (password 'admin') to post
+test messages.
+
+5) Update BBoard.gif and/or the information in config.inc as neccessary.
+
+That should be it - if anything isn't working (which is quite possible),
+then feel free to send me an email at Jeremy@planetquake.com.
+
+Jeremy
+(4/10/99 - at about 1:30am!)
+
+This Forum has been tested with - UK setup of MSSQL Server 7.0 & IIS 4.0
+
+
+ Version History:
+==================
+
+Version 1 - Based on the original ASP Forum
+
+Version 2.00 - Based on the new ASP Forum
+Version 2.01 - Bugs fixed - Categories couldn't be added. Problems if constants
+		were already defined for 'view/modify users'.
+Version 2.02 - Fixed Deleting user bug.
+
+
+******************************************************
+*****     Setting MS SQL Server to UK dates      *****
+******************************************************
+
+If you're running a UK web server, and MS SQL server 6.5, chances are it will
+force you to use American 'mdy' dates. This will cause lots of problems with
+your web server, which uses 'dmy' dates - you'll get errors such as 'Failed to
+convert text to datetime' and others. To fix this, apart from altering every
+part of the code to use different dates, it is much easier to adjust the
+settings on the SQL server, and everything will run normally. I've included
+instructions for MS SQL server 6.5 and 7, which are the ones I've been able to
+test the forum with.
+
+Note (for both Server versions): These settings are on a per-user basis - if
+you don't want to affect other users of the system, then you should set up a
+seperate user account on the server for this Forum, and use that.
+
+*********************
+* MS SQL Server 6.5 *
+*********************
+
+1) In the SQL Enterprise Manager, Go to server settings, 'configuration' tab,
+and change 'Allow Updates' to 1. Click 'OK'
+
+2) Go to a query window, select the 'master' database, and run this query
+against it:
+
+insert into syslanguages VALUES
+(1,'dmy',1,420,'uk_english','uk_english','January,February,March,April,May,J
+une,July,August,September,October,November,December','Jan,Feb,Mar,Apr,May,Ju
+ne,July,Aug,Sep,Oct,Nov,Dec','Monday,Tuesday,Wednesday,Thursday,Friday,Satur
+day,Sunday')
+
+You can check it went in by then typing 'Select * from syslanguages'
+
+3) Type the command:
+
+sp_defaultlanguage <user>, uk_english
+
+Use the username that you're using for the forum, for example:
+'sp_defaultlanguage sa, uk_english'
+
+4) Go back to server settings, and put 'Allow Updates' back to 0.
+
+*******************
+* MS SQL Server 7 *
+*******************
+
+In the SQL Enterprise Manager, browse to 'Security/Logins'. Double-click the
+user in the right-hand pane and simply set the 'Default Language' of the user
+in the bottom section of the properties box. This should be set to 'British
+English' to enforce 'dmy' dates, as opposed to 'English' which is really
+American English (with 'mdy' dates).
+
+That's all you should need to do...
+
+******************************************
+
+If you have any problem with these instructions, feel free to contact me at
+Jeremy@planetquake.com

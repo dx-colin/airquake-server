@@ -1,0 +1,14 @@
+# Server logs (written by Quake into game/airquake/)
+game/airquake/qconsole.log
+
+# Quake game files (large binaries, may be proprietary)
+game/id1/
+
+# Airquake mod binaries — keep server.cfg tracked
+game/airquake/*.PAK
+game/airquake/*.pak
+game/airquake/*.BSP
+game/airquake/*.bsp
+game/airquake/*.DAT
+game/airquake/*.dat
+!game/airquake/server.cfg

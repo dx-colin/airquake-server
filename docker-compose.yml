@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+
+  quake-airquake:
+    image: quake-airquake
+    container_name: quake-airquake
+    restart: unless-stopped
+    ports:
+      - "26000:26000/udp"
+    volumes:
+      - ./game/id1:/var/games/quake/id1:ro
+      # Not read-only: server writes qconsole.log here during play
+      - ./game/airquake:/var/games/quake/airquake
+    environment:
+      - TZ=UTC
+
+  quake-stats:
+    image: quake-stats
+    container_name: quake-stats
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      # Read qconsole.log written by the game server
+      - ./game/airquake:/data:ro
+    depends_on:
+      - quake-airquake

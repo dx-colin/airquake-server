@@ -1,0 +1,65 @@
+  12/02/1999 - - - AIRQUAKE2 MAP! - - - PARKING
+------------------------------------------------------------------------
+title    		: Empty parking house
+filename 		: Parking.zip
+date     		: 24/02/99
+author   		: Janne "Splatter" Wahlström (if you dont see what the ö is, 
+                                                      its o with two dots over it)
+email    		: splatter4070@hotmail.com
+icq			: 19844087
+
+		THIS MAP REQUIRES THE GREAT AIRQUAKE2 MODIFICATION!
+		 Get Airquake2 from http://airquake2.converted2.com
+------------------------------------------------------------------------
+credits  		: The QAARD team, for making a GREAT! mod.
+			: SçûZzÿ, for helping me how to make maps.
+			: Lithium Software for QOOLE.	
+			: My friend Patrik for testing it with his friend and me.		
+------------------------------------------------------------------------
+
+Description		: Go play it and see!
+
+Goals			: Smoke a radio???
+
+Features		: Great teamplay!
+			: Nice lightning
+------------------------------------------------------------------------
+how to install		: extract the .zip file into your *:\airq2\maps\ directory 
+			  example---> (c:\quake2\airq2\maps\)
+------------------------------------------------------------------------
+Single Player           : No
+Cooperative             : No
+Deathmatch              : Yes (2-6 or more)
+Teamplay		: Yes, recommended (4-10)
+Difficulty Settings     : Nope
+New Sounds              : Nope
+New Graphics            : Nope
+New Music               : Nope
+New Monsters            : Nope
+New Demos               : Nope
+New Models              : Nope
+QuakeC Patch            : Airquake2
+
+base                    : New from scratch
+editors used            : QOOLE
+Known Bugs              : None
+Build Time              : 2 whole days
+Compile machine         : P266-MMX with 64MB-SDRAM (i need Voodoo2!)
+QBSP Time               : I dont remember...
+QRAD Time		: Bad memory...
+QVIS Time		: I have to train my memory =)
+
+------------------------------------------------------------------------
+copyright and 		: You may not use Parking as a base to build levels,
+distribution info	  however you can look at it and see how to do airq2 maps.
+			  This file may be transfered throught Digital medium 
+                          (Eg, Disk, CD, Internet, BBS) Aslong as...
+				1) All these files are intacted and not alterd.
+				2) You arn't making profits from this level,
+				   excluding PC-magazines but i have to get 
+				   a copy of the magazine. (mail and ask for my adress)
+			  
+		  QUAARD are the creaters of (the great) Airquake 2, for more
+			  information about airquake 2 have a look at...
+				http://airquake2.converted2.com
+			  	

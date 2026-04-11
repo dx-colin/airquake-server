@@ -1,0 +1,80 @@
+================================================================
+
+Title                   : Sea Strike
+Date                    : 8/7/99
+Filename                : seastrik.bsp  
+Author(s)               : Brian Rivers
+Email Address           : brivers@cc.gatech.edu
+
+Description             : A new level for AirQuake 1. It's a 
+                          water-based level divided into two
+                          bases which are separated by water and
+                          a big wall. It's a really tall level, 
+                          so there's plenty of room for dogfights 
+                          and stuff. 
+
+                          Ground vehicles are supported, and can
+                          travel between the two bases by a neat 
+                          little landing craft.
+
+                          Single player and Teamplay DM are kinda 
+                          tough because of the defense arrays 
+                          around both bases. 
+
+Additional Credits to   : id Software for Quake
+                          Iikka Ker„nen for AirQuake TC & IKLITE
+                          Matt Jenkins for his creative ideas and 
+                             help with testing
+                          Creators of QOOLE
+
+================================================================
+
+* Play Information *
+
+
+Level Name              : Sea Strike
+
+Single Player           : YES
+Teamplay DM             : YES
+Deathmatch              : YES
+Difficulty Settings     : Not Implemented
+
+New Sounds              : NO
+New Graphics            : NO (But I used Iikka's AirQuake textures)
+Sound Track             : 2
+Demos Replaced          : None
+.map   Included         : YES
+
+Software needed to play : AirQuake TC
+(ctf, normal quake etc.)
+
+
+Comments                : I'd like some feedback so I know how I did 
+                          on this level. I know it's big and will be 
+                          slow on some computers, but I still think it's
+                          pretty cool.
+
+
+
+* Construction *
+
+Base            : Scratch
+Build Time      : About an hour & 30 minutes
+
+Times & stats   :System Used      : Cerleron 300A (O/C'd to 450), 128 Mb RAM
+                 Qbsp             : ~30 seconds
+                 Vis (-level 4)   : ~3 minutes
+                 Light (-extra)   : ~80 minutes
+                 Brushes          : 248
+                 entities         : 164
+                 miptex           : 41
+
+Texture WAD used: Airquake.wad
+Editor(s) used  : QOOLE v2.50
+                  IKLITE
+Known Bugs      : Lots of Hall Of Mirrors (HOM) w/ GLQUAKE. 
+
+* Legal Stuff *
+--------------------------
+I don't really care what you do with this level.
+

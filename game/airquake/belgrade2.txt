@@ -1,0 +1,205 @@
+================================================================
+Title                        : Bombing Belgrade 2
+Filename                     : belgrade2.bsp
+Date                         : 03/14/2000
+Intended for                 : Quake 2 - Airquake 2
+Author                       : Andre Marcelo-Tanner
+Author E-Mail                : kzap@bigfoot.com
+Author WWW page              : http://daedge.hypermart.net/
+Description                  : The Serbs have invaded, the only way to stop
+			     : them is to bomb them into submission.
+			     : You are given an array of planes, helicopters,
+			     : and ground vehicles to complete your mission.
+			     : Your targets are the buildings in downtown
+			     : Belgrade, if you run out of ammunition, come
+			     : back to base for a reload. Do not fail us.
+Credits                      : id Software for Quake and Quake 2
+			     : Iikka Keränen for Airquake 1, which started it all
+			     : Matt Tagliaferri, the author of qED for making the 
+			     :  great level editor that I use
+			     : Quake Rally Team for their Qrally texture wad
+			     :	(http://impact.frag.com/rally)
+			     : David Namaksy for textures from his Clean01 level
+			     : Jeremy James who runs Airquakelevels:
+			     :  (http://www.planetquake.com/airquakelevels)
+			     : QUAARD Team for Airquake 2 which inspired me to 
+			     :	keep working on this level and 
+			     :  convert it to Quake 2 (http://www.planetquake.com/airquake2/)
+			     : Map Finger for letting me have a place to show off my maps
+			     :  keep a daily update (http://www.mapfinger.com/)
+			     : The guy who made MAPZ, the online compiler which lets me
+			     :  compile my map hassle free. (http://www.nofadz.com/mapz/)
+			     : Alex Peterson for running qrad3 on my map for the final compile, I
+			     : could have never released this map without his help
+			     : Anyone else I forgot to mention... 
+			     :	hope I didn't forget anyone though
+================================================================
+
+* Play Information *
+
+Single Player           : Yes
+Cooperative             : No
+Deathmatch              : Yes
+Teamplay		: No
+New Sounds              : No
+New Graphics            : Yes
+
+* Construction *
+
+Base                    : Bombing Belgrade Map
+Editor(s) used          : QED2, QART, Paint Shop Pro 5, Wally, BSP2WAL
+Build time              : 2 Months
+QBSP3 Time              : 52 seconds
+QVIS3 Time (level 4)    : 7 hours 13 minutes 24 seconds
+QRAD3 Time (extra)      : 2 hours 2 minutes 50 seconds
+Compile time            : 9 hours 17 minutes 6 seconds
+Compile machine         : QBSP3 & QVIS3 - Dual Pentium 233 128MB RAM 1.1GB EIDE SWAP
+			: QRAD3 - Pentium II 300 256MB RAM
+
+================================================================
+
+* Other maps made by me *
+    -- Bombing Belgrade - Quake - Airquake
+    -- Siege At Belgrade - Quake - Defeat In Detail
+
+================================================================
+
+* Installation Instructions *
+
+1) Extract the belgrade2.zip into your Airquake 2 directory
+(AIRQ2) retaining the folder structure. After unzipping
+the layout should be updated with the following:
+
+*:\QUAKE2
+        |
+        +--- AIRQ2
+        |       |
+        |       +-- ENV
+        |       |      |
+        |       |      +-- city1bk.pcx
+        |       |      +-- city1bk.tga
+        |       |      +-- city1dn.pcx
+        |       |      +-- city1dn.tga
+        |       |      +-- city1ft.pcx
+        |       |      +-- city1ft.tga
+        |       |      +-- city1lf.pcx
+        |       |      +-- city1lf.tga
+        |       |      +-- city1rt.pcx
+        |       |      +-- city1rt.tga
+        |       |      +-- city1up.pcx
+        |       |      +-- city1up.tga
+        |       |
+        |       +-- MAPS
+        |       |      |
+        |       |      +-- belgrade2.bsp
+        |       |      +-- belgrade2.txt
+        |       |
+        |       +-- TEXTURES
+        |              |
+        |              +-- BELGRADE2
+	|		      |
+	|		      +-- airbr1.wal
+	|		      +-- airdr2.wal
+	|		      +-- airflag1.wal
+	|		      +-- airflag2.wal
+	|		      +-- airwd1.wal
+	|		      +-- airwd3.wal
+	|		      +-- azwall1_5.wal
+	|		      +-- city2_2.wal
+	|		      +-- crate0_side.wal
+	|		      +-- crate0_top.wal
+	|		      +-- fence.wal
+	|		      +-- glass_1.wal
+	|		      +-- metal1_6.wal
+	|		      +-- metal1_7.wal
+	|		      +-- metal1_8.wal
+	|		      +-- modbricka.wal
+	|		      +-- modcratedoora.wal
+	|		      +-- modcratedoorb.wal
+	|		      +-- modcratesidea.wal
+	|		      +-- modcratesideb.wal
+	|		      +-- modcratetopa.wal
+	|		      +-- modcratetopb.wal
+	|		      +-- modlightb.wal
+	|		      +-- modwallb.wal
+	|		      +-- rock1_2.wal
+	|		      +-- rock3_7.wal
+	|		      +-- rock4_1.wal
+	|		      +-- rock4_2.wal
+	|		      +-- sbrick_1.wal
+	|		      +-- sfloor1_2.wal
+	|		      +-- smoke_stack_2.wal
+	|		      +-- sumabuildinga.wal
+	|		      +-- sumabuildingb.wal
+	|		      +-- sumabuildingc.wal
+	|		      +-- sumawalld.wal
+	|		      +-- water5.wal
+	|		      +-- wateroil.wal
+	|		      +-- wceiling5.wal
+	|		      +-- wendasphalt.wal
+	|		      +-- wendblack.wal
+	|		      +-- wendcratea.wal
+	|		      +-- wendmetal.wal
+	|		      +-- wendpipesc.wal
+	|		      +-- wendroada.wal
+	|		      +-- wendsidewalk.wal
+        +--- BASEQ2
+
+
+2) Now start Quake2 normally.
+
+3) After the demo is done playing, pull down the console by
+pressing the tilde button (~ or `). Then type in the console
+without the quotes: "game X" , where X is the directory where
+you installed Airquake2. So if you installed Airquake2 into
+a directory called AIRQ2, you would type "game AIRQ2".
+
+4) Once Quake 2 has reset, type without quotes "map belgrade2"
+and the level will start.
+
+================================================================
+
+* Notes from the author *
+Finally converted Bombing Belgrade to Airquake 2,
+took much longer than I expected. Now I know I never
+want to do another level conversion, especially if I
+have to rename all the textures and change all the
+entities. Atleast it's finished. I was not able to
+put in all the features I wanted to add to the map.
+Some of those were a bigger map and the ship moving
+around. I found that the Quake 1 and Quake 2 limits
+are about the same, its just that the Quake 2 engine
+looks better. Actually to make the map playable on
+a system like mine I had to remove a lot of the
+destroyable buildings, so now only the main city
+buildings can be destroyed. The good thing is
+r_speeds are not bad and the level plays pretty good.
+It's too bad though that I was not able to add
+the clouds, they would have added a nice effect.
+I hope everyone who plays this level enjoys it.
+Please everyone support Airquake2, it really is a
+great mod, they have done so much with the Quake 2
+engine, all the plane physics and models and everything
+just make it such a different experience. I hope
+there are many more Airquake 2 maps to come.
+You can find Airquake 2 at: 
+(http://www.planetquake.com/airquake2/)
+I have some future plans for other Airquake 2 levels
+but they will have to hold as I work on a Half-Life
+project called War Sector-X:
+(http://www.millenium2048.co.uk/)
+Enjoy!
+
+================================================================
+
+* Legal Stuff *
+Authors may NOT use this level as a base to build other levels.
+This map is intended to be distributed over the Internet/BBS's.
+You are not allowed to sell this map without prior written consent by the author.
+This text file MUST be also distributed with the bsp file.
+
+
+================================================================
+
+Generated by 'Map Text Maker' 1.00
+http://www.planetquake.com/borderfield/

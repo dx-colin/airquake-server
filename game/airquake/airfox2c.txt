@@ -1,0 +1,94 @@
+title    : foxii's airquake canyons - version c
+filename : airfox2c.zip
+date     : 98/10/4
+author   : martin fuchs (gibs you as foxii)
+
+email    : martin.fuchs@physik.fu-berlin.de
+
+what is this? : a deathmatch/teamplay level for AIRQUAKE2
+                (get it from http://airquake2.vortexq.com)
+
+credits  : id for quake & quake2
+           the QAARD team and bjoern drabeck for airquake2
+           iikka ker"anen for airquake (after all, this started it :)
+           alexander malmberg for quest2 (still the best editor!)
+           trey harrison and chris carollo for quest
+           tim wright for arghrad
+           piramida for m2m
+
+type of mod
+-----------
+bsp      : yes
+map      : no   (mail to me if you want it)
+quake c  : no
+sound    : no
+mdl      : no
+
+map info
+--------
+this is a conversion of the level airfox for airquake for quake to
+airquake2 for quake2 (uh oh :)
+
+single player right now is still useless, cause the explodable
+walls are not programmed yet. so is coop. so are all the gimmicks for
+the ground vehicles. once the features are in airquake2 they'll be
+implemented.
+
+here's the deal: get into this level with some friends and try to shoot
+someone down before you wreck the plane. the pilot with least negative frags
+wins ;)
+
+please give me input about what kind of improvements could be made for
+deathmatch playability etc.
+
+single player           : yes, for checking it out
+coop                    : not yet
+deathmatch/teamplay     : yes, 4 starts
+base                    : airfox, converted w/ m2m
+editors used            : quest2
+
+compile info: P200MMX 64Mb RAM, questqbsp3 75 s, gddqvis3 -level 4
+2475 s, arghrad -chop 128 -bounce 32 -extra 29800 s
+
+the story (good gosh - a STORY!!!)
+----------------------------------
+you're stationed in a secret base somewhere deep in canyonland. you're
+testing new planes and a new combat coordinating computer mainframe
+system.
+
+this is actually a fun thing to do. now here's the bad surprise: news
+are in that the second base close by has been overtaken by a bunch of
+bad guys (might be bad girls, details are unknown =) and reprogrammed.
+
+it's your job now to make sure that the 2nd mainframe gets destroyed
+before they can bring it back to whoever pays them.
+
+in deathmatch the 2 bases are for teams 1 and 2. base 1 is in the cave
+in the canyon wall, base 2 in the underground bunker. i hope that none
+has a heavy advantage. i'll need deathmatch input on that though.
+
+new in version c
+----------------
+
+* ok, here come the shootable buttons - no more lame ass landing in the
+  underground base, hehe. you gotta shoot the contact plate on the wall and
+  the force field will go away for a lil' while. i suggest you use your
+  autocannon.
+* drones work now
+* vehicle specific startpoints
+
+
+how to install
+--------------
+
+* unzip the file into your quake2\airq2\maps directory.
+* now run quake2 with 'quake2 -set game airq2 +map airfox2c' from the command
+  line.
+
+copyright and distribution mambo jambo
+--------------------------------------
+as this is a map for airquake2, check the airquake2 site for copyright
+stuff (i'm using their entities). don't make money on this. if you want
+to distribute it in electronic format, keep the zip file intact,
+including this .txt file and ask me for permission.
+

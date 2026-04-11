@@ -1,0 +1,143 @@
+Name:           Mine Clearance - Harb!ngeR
+
+Author:         The Harb!ngeR of Fish
+
+Email :         harbinger@storm-1.freeserve.co.uk
+
+WebSite :       www.conversions.net/elf
+
+ICQ :		30578982
+
+.Bsp name:      AIRMINE.BSP
+
+Spec:           An AirQuake level, set in some kind of rural mining area.
+
+Level info:     I wondered what would happen if I turned my leveling skills to
+		making a decent map for one of the world's greatest mods,
+		namely AirQuake... This is the result!
+
+ออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออ
+
+Thanks to:
+                The writer of BSP
+
+                ID of course!
+
+		Iikka, for making AirQ in the first place!
+
+Screams of frustration and torment for:
+
+                The Teletubbies, now they've been translated into Welsh!!!
+
+		Mantrid, he's such an evil guy! ;)
+
+Final comments:
+
+		If the postman rings twice, shoot him in the face and steal
+		all his belongings...
+
+ออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออ
+
+Build Machines: P266 w 32mb Ram (My Laptop)
+Compile machine: P266 with 32mb Ram
+Total Compile time:
+(QBSP)                          time: Too long
+(IKLITE)                        time: Not quite as long
+(VIS -THREADS 3 -LEVEL 4)       time: Way too long!
+VIS compresion level -
+Leaks: None
+Models:
+Entities:                       Dum, all I remembered to get was the number
+Textures: 83!!                  of textures :0
+
+Type of patch: New Level.
+Build time:    Around 12 or so hours? I dunno.
+Editors used:  BSP.
+New levels:    1
+Single player: YES
+CO-OP:         YES
+Deathmatch :   YES
+Teamplay DM:   YES
+
+New .mdl files: NO
+New Sounds: NO 
+New music:  NO
+New skins:  NO
+
+ออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออ
+
+Bugs:
+
+None!! Mwahahaha!!! NEVER A BUG IN MY LEVEL!!!
+
+ออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออ
+
+Long live Quake! (Forever & Ever Amen!)
+Down with poor quality clone games!
+Down with my enemies!
+Please?
+
+ออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออ
+
+Leagal stuff:
+
+Not much, I'm not fussy, but there are requirements below:
+
+This file is to be included with the level if it is posted anywhere.
+
+The contents of this file are not to be changed or modified in any way.
+
+This map and file are Copyright (c) Benjamin Skinner 1999.
+
+This map may be used as part of a patch or for part of a campaign, all I ask
+is that this file is included and the title is unchanged. Try and get in
+touch with me if you want to do this, and I'll see about sending you the .map
+file, I'd just like to know where my stuff has gone, that's all.
+                                
+If this is distributed on a magazine then I want a free copy of the mag!
+(Email adress in above) I guess it's only fair?
+
+ออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออ
+
+Coming soon........
+
+*
+
+DiD3.BSP - A wiked dog of a base, 'inna desert!
+
+HARB3.BSP - My third NukeMatch map with 80% new textures by me :)
+
+*
+
+Okay, okay...
+
+Enough adverts already.....
+
+ออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออ
+
+All about me.
+
+I'm the Harb!ngeR, basically a half decent grade player with a set of feindish
+ideas for levels.
+
+I'm basically the project leader on what has now become the ELF team.
+
+I still play Quake more than Q2 for some reason, though I don't really know
+why, it's just I love all those dull, easy to kill monsters... And my pet dog
+Cujo!
+
+I also 'loan out' my mapping skills to other teams such as the NukeMatch
+project (A TF style games where flags = components for a balistic missile
+that can destroy everyone who's not hiding in a bunker) and guys who want the
+odd specialist map.
+
+If 'ya like my work, get in touch!
+
+ออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออ
+
+
+                     ษอออออออออออออออออออออออออออออป
+                     บ   Long Live The Fighters!   บ
+                     ศอออออออออออออออออออออออออออออผ
+
+		      (I love that book/film/game!)

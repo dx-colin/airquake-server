@@ -1,0 +1,71 @@
+  12/03/1999 - - - AIRQUAKE2 MAP! - - - BACK TO TITANIC
+------------------------------------------------------------------------
+title    		: Back to Titanic
+filename 		: Titanic.zip
+date     		: 12/03/99
+author   		: Janne "Splatter" Wahlström (if you dont see what the ö is, 
+                                                      its o with two dots over it)
+email    		: splatter4070@hotmail.com
+icq			: 19844087
+
+		THIS MAP REQUIRES THE AIRQUAKE2 MODIFICATION!
+		 Get Airquake2 from http://airquake2.converted2.com
+------------------------------------------------------------------------
+credits  		: The QAARD team, for making a GREAT! mod.
+
+			: SçûZzÿ, for helping me how to make maps.
+			: Lithium Software for QOOLE.
+
+			:Ty Matthews (ty@wwa.com) and Neal White III (nwhite@softblox.com) 
+			 for the best texture maker in the world! (Wally)
+
+			: Stecki (stecki@terrafusion.com) for a cool sky.
+				 (http://deconstruct.terrafusion/)
+------------------------------------------------------------------------
+Single Player           : No
+Cooperative             : No
+Deathmatch              : Yes (2-4 or more)
+Teamplay		: Yes, not recommended (and not in Airquake2 yet)
+Difficulty Settings     : N/A
+New Sounds              : No
+New Graphics            : Yes
+New Music               : No
+New Demos               : No
+New Models              : No
+QuakeC Patch            : Airquake2
+
+base                    : None
+editors used            : QOOLE and wally for the new textures.
+Known Bugs              : None
+Build Time              : 3 weeks +vacation in 2 weeks (it´s my first map)
+Compile machine         : P166-MMX with 32MB-SDRAM (i need a VooDoo2!)
+QBSP Time               : ?? sec
+QRAD Time		: ?? sec
+QVIS Time		: ?? sec
+------------------------------------------------------------------------
+Description		: Titanic and some ice.
+
+Goals			: Spank the mouse?
+
+Features		: Titanic!
+			: Clouds!
+			: Destructable landscape!
+			: Vehicle speciffic starts! (only helos and airplanes)
+			: New sky!
+			: New textures!
+------------------------------------------------------------------------
+how to install		: extract the .zip file into your airq2 directory 
+			   (c:\quake2\Airq2\)
+------------------------------------------------------------------------
+copyright and 		: You may not use "Back to Titanic" as a base to build levels,
+distribution info	  however you can look at it and see how to do airq2 maps.
+			  This file may be transfered throught Digital medium 
+                          (Eg, Disk, CD, Internet, BBS) Aslong as...
+				1) All these files are intacted and not alterd.
+				2) You arn't making profits from this level,
+				   excluding PC-magazines.
+			  
+		  QUAARD are the creaters of (the great) Airquake 2, for more
+			  information about airquake 2 have a look at...
+				http://airquake2.converted2.com
+			  	

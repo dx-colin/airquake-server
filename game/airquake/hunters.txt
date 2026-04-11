@@ -1,0 +1,54 @@
+###################################################################################################################
+The Hanger's Map Competition Map
+###################################################################################################################
+Title                   : Go'in Hunting By SPIKE
+ Filename                : Hunters
+ Author                  : SPIKE/Jamie Pollard
+ Email Address           : cartman_kickass@hotmail.com
+ Description             : A kicken Air Quake 2 map that'll blow your mind away!
+
+
+			   
+
+ Installing :		Use winzip to extract the archive in to the drive that quake2 is located in. 
+
+ 
+ Additional Credits to   : I would like to thank many many people at the Official Air Quake 2 General Discussion Board like Alun Bestor who
+                           helped me with my many problems on making my first map.
+                           Scuzzy helped me greatly on using the tools and also helping me with my many problems.
+                           Other people include Jez and JexJackL for helping me also.
+------------------------------------------------------------------
+
+* Play Information *
+
+ Settings                : Air QUAKE 2 SETTINGS
+ Deathmatch 2-4          : hell yeah 
+ Deathmatch 5-100        : uhhh... over 16 it gets f#@k'n crazy
+ 
+* Construction *
+
+ Build Time              : 4 weeks
+ Compile Time            : 45 min on a pentium 300 mhz 96 megs of ram oh yeah!!!
+ Editor(s) used          : Worldcraft
+ Known Bugs              : When flying in a fighter/ground vehicle high in the air, it gets screwed up sorta, but not a huge problem. 
+                  
+* Other Info *
+This map was made for The Hanger's (http://www.converted2.com/hanger/) map competion where the winner would get a great VOODOO 2 prize! 
+
+* Distribution *
+This map should not be released with out this text file
+
+Ok,
+You may NOT distribute this map on a CD or sell it with out writen consent from me. my E-Mail is cartman_kickass@hotmail.com
+
+You may NOT use this for a base of one of your levels!!
+
+You may have fun playing this.
+
+You may bitch at any problem, you see.
+
+You may give me money for no reason.
+
+You must say this map rocks to play.
+
+ 

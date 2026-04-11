@@ -1,0 +1,108 @@
+==================================================
+Title                   : UberOil 0.91 (new version)
+Filename                : uberoil.bsp
+Release Date		: 22 Nov 97
+
+Author                  : Alun Bestor ("Uberian")
+Email Address           : abestor@clear.net.nz
+Description             : A cool AirQuake map, set in a chain of
+			  islands in the middle of the sea.
+			  Blue team is based on an oil rig and
+			  oil tanker (converted into a makeshift
+			  aircraft carrier); Red team control an
+			  ex-trawler military ship with gunboat
+			  escorts, and a floating-pontoon
+			  airbase.
+			  Sounds cool? It is.
+                          
+Additional Credits to   : Ben Morris (author of Worldcraft)
+			  Iikka Keranen (author of AirQuake)
+			  Ian Harle ("Ooon", my playtester)
+		          Oh yeah, and lest there be a
+			  map-description file in the universe
+			  that doesn't mention them, iD software
+===================================================
+* Play Information *
+
+Requirements		: Registered Quake, AirQuake build 25
+			  or better
+Single Player           : Yup; enemies, mission briefing and exit
+			  are all there.
+Co-op                   : Same as above, though untested
+Deathmatch 2-16         : Yup, teamplay too. Go nuts!
+Difficulty Settings     : Indeed
+Aircraft choice		: Dogfighter, fighter-bomber, stealth
+			  fighter, helicopter, hovercraft
+Additional Info         : You may want to make sure you have
+			  destroyed all that you're meant to
+  			  before heading for the exit, or else
+			  you could end up slightly warm.
+==================================================
+* Construction *
+
+Base                    : Scratch level
+Programs used           : WorldCraft 1.5b (for level-building)
+			  qART 1.0 or something (for building
+			  my texture libraries, available on
+			  request)
+Construction time       : 4 weeks-ish
+Known bugs              :
+The hovercrafts can get too close to the edge of the map
+for their own good, until the view-camera dips into the air;
+Looks kinda wierd. I know why this is and how to fix it,
+but I don't plan to correct it (correcting it means that
+bullets will hit the sky). Just don't drive (sail?) so close.
+			  
+Ummm... the attacking choppers aren't working too well yet.
+Half the time they don't go to the waypoints they're meant to;
+the other half the time they do reach them, proceed to blast
+away dramatically at the AA guns, and then just sort of hover
+about looking nervous and not knowing what to do with all the
+buildings they're meant to be destroying. Mind you, I did once
+see a bunch of them demolish the tanker bridge by merrily
+crashing into it one by one... I shall endeavor to correct their
+behaviour in a later release.
+			
+The level probably doesn't work well in GLQuake. Let's face it,
+_nothing_ works well in GLQuake, and frankly I'm not going to 
+worry about it until such time as someone sends me a free
+Monster3D. So spin on it, accelerator-heads.
+
+Build machine: P133 16 EDO RAM (I hate technology. This used to
+be entry-level this time last year)
+Build times:
+	QBSP		: 57 sec.
+	Light -extra	: 42 min. 15 sec.
+	VIS -level 4	: 1 hr 29 min. 30 sec.
+Statistics:
+	Faces		: 3652
+	Brushes		: 244 (pre-QBSP)
+	Entities	: 467
+	Average R_Speed	: 370 - 410 (should run a little faster
+			  than Air3)
+
+==================================================
+
+* Feedback *
+
+I -NEED- feedback on this. While I think I have the physical
+level just right, I have no way of testing the game balance
+for teamplay (I only have access to a 1-on-1 serial connection).
+So I really need as much feedback as possible on this level.
+I dig criticism, so long as it's contructive (say WHY it sucks/is
+cool).
+
+* Copyright / Permissions *
+
+Authors may NOT use this level as a base for their own creations.
+This level may NOT be sold without my express written permission.
+It may be stored on a BBS or equivalent on-line resource so long
+as money is not charged for access to it.
+If anyone from Actura software even touches this file, they must
+take the Actura CD-ROM it will inevitably have been already
+released on and stick it up their ass.
+
+* Where to get this BSP *
+
+ftp.cdrom.com/pub/idgames2/levels/airquake/ and any good AirQuake-
+affiliated site

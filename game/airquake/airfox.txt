@@ -1,0 +1,71 @@
+title    : foxy's airquake canyons
+filename : airfox.zip
+date     : 97/12/1
+author   : martin fuchs (gibs you as foxy)
+
+email    : fuchs@physik.fu-berlin.de
+
+what is this? : a deathmatch/teamplay level for AIRQUAKE
+                (get airquake from http://www.planetquake.com/ikq/airquake.htm)
+
+credits  : id for quake
+           iikka ker"anen for airquake and the iklite util
+           trey harrison and chris carollo for quest (YES!!!)
+           yahn bernier for bsp (actually for the merge-brush feature of bsp :)
+
+type of mod
+-----------
+bsp      : yes
+map      : no   (mail to me if you want it)
+quake c  : no
+sound    : no
+mdl      : no
+
+map info
+--------
+single player           : yes
+coop                    : yes
+deathmatch/teamplay     : yes (2x8 starts)
+base                    : new level from scratch
+editors used            : quest, bsp (brush-merging),
+                          (corrected 2 textures with worldcraft ;)
+
+
+description
+-----------
+you're stationed in a secret base somewhere deep in canyonland. you're testing
+new planes and a new combat coordinating computer mainframe system.
+
+this is actually a fun thing to do. now here's the bad surprise: news are in
+that the second base close by has been overtaken by a bunch of bad guys (might
+be bad girls, details are unknown ;) and reprogrammed.
+
+it's your job now to make sure that the 2nd mainframe gets destroyed before they
+can bring it back to whoever pays them. try to capture their lead officer and
+bring him (or her) back to home base.
+
+in deathmatch the 2 bases are for teams 1 and 2. base 1 is in the cave in the
+canyon wall, base 2 in the underground bunker. i hope that none has a heavy
+advantage. i'll need deathmatch input on that though.
+
+there are two elevators and a moving platform for the ground vehicles. be
+careful with the hovercraft on these. if you slide off them you might get
+hurt. maybe reduce throttle when you're on them. to open doors and activate
+elevators you have to shoot the brown/yellow plates. in the underground
+base if you start an airplane do so when almost taking off. again, i'd like
+input on if this works well for you (it does for me...).
+
+how to install the addon
+------------------------
+
+* unzip the file into a quake\airquake\maps directory.
+* now run quake with 'quake -game airquake +map airfox' from the command
+  line.
+
+copyright and distribution mambo jambo
+--------------------------------------
+as this is a map for airquake, check the airquake site for copyright stuff
+(i'm using his entities). don't make money with this. if you want to
+distribute it in electronic format, keep the zip file intact, including this
+.txt file and notify me.
+

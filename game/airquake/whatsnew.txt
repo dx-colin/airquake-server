@@ -1,0 +1,114 @@
+The New AirQuake2:
+==================
+
++++v0.14+++ - first public test version!
+-----------
+- basic LQMs - continued, more or less workable now, but not finished
+- getting the F16 on the recharge-spot (when you have an LQM) is now possible
+- some more work on crash-landings
+- crashed planes explode some time after the crash
+- bugtesting and -fixing for first public-test release
+- reimplemented cmd zoom
+
++++v0.13+++
+-----------
+- basic LQMs - continued
+- further work on misc_vehicles
+- some more work on planes
+- started working on cmd eject
+- bugfixes and cleanup
+
++++v0.12+++
+-----------
+- basic LQMs 
+- planes maneuverability now depends on speed !
+- started reimplementing misc_vehicle
+- preparations for vehicle selection
+- other stuff
+
++++v0.11+++
+-----------
+- started working on completely new weapon-handling code (presently only basic autocannon, and for the
+  time unlimited autocannon ammo)
+- code restructuring and cleanup
+- preparation of upcoming features
+
++++v0.1+++
+----------
+- you can now slooowly taxi your plane over terrain without losing health, but being too
+  fast rips off your gear!
+- cmd "cameramode" changed to cmd "cam"
+- added two new cameracommands "cam_x" and "cam_y" which let you specify the x and y position
+  of your camera relative to your vehicle (example: "cam_x 122" moves you 122 units behind your plane)
+- cameramode fixes
+- reimplemented oiltanks (misc_explobox)
+- reimplemented clouds
+- minor stuff
+
++++v0.09+++
+-----------
+- implemented misc_camera entity (start of level) - use this if you want your camera to
+  be at a special place/look into a specific direction at startup!
+- completely new spawn functions, spawn points should now be selected properly!
+- minor fixes and stuff
+
++++v0.08+++
+-----------
+- added new throttle commands: increase and decrease now work as before (non repeatable), new is
+  beginthrottleup, endthrottleup, beginthrottledown and endthrottledown which act as repeatable
+  commands and are recommended to be used with a macro (see autoexec.bat)
+- reimplemented trigger_recharge
+- reimplemented trigger_radio and cmd contact_tower
+- reimplemented object_tent, object_tree and object_tree_multiple
+- optimizations
+
++++v0.07+++
+-----------
+- collsion detection fixes
+- crash landing improvements
+- damage fix
+- minor stuff
+
++++v0.06+++
+-----------
+- plane-movement
+- planes can now crash-land (ie without lowering the gear)
+- planes can land on (flat) terrain - but lose health (except some special planes)
+- thrust now adjustable in 10% steps and is REPEATABLE command !
+- minor stuff
+
++++v0.05+++
+-----------
+- re-implemented cmd gear, brake, coord, roll and videomode
+- plane-movement (unfortunately almost the same as the old one)
+
++++v0.04+++
+-----------
+- worked on player-disconnect
+- added option "high" and "low" to cmd cameramode 
+- added option "nextvehicle" and "prevvehicle" to cmd cameramode (use it to watch other vehicles)
+- further camera-improvements
+- further cleanups
+
++++v0.03+++
+-----------
+- implemented cvar "rollcamera" (shall camera roll with object or stay level?)
+- reworked freelook cameramode
+- added option "near" and "far" to cmd cameramode
+- some more camera-improvment and fixes
+- put in some test-movement (very basic, only angle-changes)
+
++++v0.02+++
+-----------
+- implemented cmds "freecam" and "lockcam" to be used with the aliases "+free" and "-free"
+  for the freelook camera
+- cvar missileview to turn allow/not allow it
+- cmd cameramode implemented (camera not yet functional), argument one of:
+  forward, back, left, right, up, down, next, prev, hull, turret, missile
+- func_explosives enabled in deathmatches
+- implemented func_runways; they now also have a "aqteam" key
+- some more cleanup and preparations
+
++++v0.01+++
+-----------
+- got basic preparations done (setting up all the stuff)

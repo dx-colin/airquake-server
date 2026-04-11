@@ -1,0 +1,64 @@
+===================================================================================
+February 19, 1999
+===================================================================================
+
+Title                   : carrier
+Filename                : carrier.bsp   
+Author                  : Matt Freeman aka (nukebomb)
+Email Address           : nukebomb@alaska.net
+Date of release		: February 19, 1999
+Description		: airquake2 deathmatch map		
+					
+				
+Additional Credits to:	quaard - gave me something to make a map for
+			scuzzy - what can i say, i want that voodoo2
+			id     - they made a kickass game
+			RUST   - for the editing tips
+							
+=========================================================================================
+
+* Play Information *
+
+Game			: Quake II v.3.20 with airquake2 mod v.6.5
+Level Name       	: carrier
+File name		: carrier.bsp
+Single Player           : no
+Cooperative 		: no
+Deathmatch 2-8 Players  : yes 
+Difficulty Settings     : no.
+New graphics		: aq2 textures(not mine)
+Anything else new:	: No.
+
+* Construction *
+
+Base            : new level
+Build Time      : 8 days
+Editors used    : qoole
+		  Compiling utilities released by id software. 	  
+
+Compilation:	Qbsp3 	      build time:75   secs
+		Qvis3 (full)  build time:0    secs (crashed)
+		Qrad3 -extra  build time:0    secs (did not work)
+============================================================================================
+Platform used   : P-120 32MB RAM, Monster fusion 16mb
+Known Bugs      : drons crash game. no lighting due to crash
+
+To load this Q2 map:
+- extract to airq2\maps 
+- Start aq2 as you usually would do.
+- Pull down console, type "map carrier"
+(Do not type the quotation marks)
+		 
+
+* Copyright / Permissions *
+
+This level is not copywrited (i think, im not to big on legal shit)
+Don't put this level on any sort of commercial product please. 
+You MAY distribute this BSP through any electronic network , provided you include this file 
+and leave the level in it's original form.
+if you use it' give me some credit.
+
+*Archive info*
+Archive filename: carrier.zip
+
+

@@ -1,0 +1,60 @@
+================================================================
+Title                   : Speed Tunnel (Official Winner of The Hangers "CRAZY Map Award"!!!!)
+Filename                : Stunnel
+Author                  : Hanh "Wanderer" Court
+Email Address           : EtherealHC@aol.com
+Description             : A simple map in which you try to make a 
+			  mad dash through it without crashing.
+			  It is possible to make it all the way through
+			  without braking of any sort (ie:gears or speedbrakes)
+			  and keeping the throttle at 100% (Not afterburners)
+			  
+			  DM'ing is recommend, otherwise it gets boring.
+			  
+			  For use only with planes in AirQuake2
+			  
+			  Thanks to Pepsi Lizard who mentioned something
+			  like this on the webboard. Sorry I'm horrible
+			  with names.
+
+			  Fixed a bug in which one of the guys started sideways.
+			  Maybe later I'll make those cubes at the top into real lights.
+			  Only works with Airquake2 ver 0.30
+
+			  WARNING: There are a couple of doors, the one near the beginning you
+			  just shoot and it opens the other opens on it's own... or it should.
+================================================================
+
+* Play Information *
+
+Single Player           : Yes (More or less anyways)
+Cooperative             : No (No sense in even bothering with)
+Deathmatch              : Yes (Up to 8, been tested with 2 morons :)
+Difficulty Settings     : No
+New Sounds              : No
+New Graphics            : No
+New Monsters            : No
+New Demos               : No
+New Models              : No
+QuakeC Patches          : No
+
+* Construction *
+
+Base                    : New Map From Scratch
+Editor(s) used          : QERadient 1.0 build 077 
+Known Bugs              : None
+Contruction Time	: ~10Hrs
+Compile Time            : ~1Hr
+Compile Machine		: Pentium 166mmx 48megs EDO
+Comments                : For use with AirQuake2 ver 0.30 and up.
+			  This is only good if you have somebody else to race.
+
+			  As soon as I figure out how to hook up my video camera to
+			  my Thriller 3d I'll send a mug shot to The Hanger and you can
+			  have a pic the official winner of the "Crazy Map Award" 
+			  (I still love it!!!!).
+
+Legal Crap		: Yes you can make something real out if this if you want 
+			  just e-mail ahead of time so I can send you the map and
+			  get some credit out of this. In other words I want credit
+			  for it if you do.

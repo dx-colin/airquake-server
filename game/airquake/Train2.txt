@@ -1,0 +1,55 @@
+================================================================
+Title                   : Train2, second RCAF training map
+Date                    : 03\21\98
+Filename                : train2.bsp 
+Author                  : Attila "KillerAttila" Gyurusi
+Email Address           : kisguru@bkmoh.hu
+Home Page               : ----------------
+
+Description             : PURE DEATHMATCH MAP!
+                          Did everything to speed up game play
+                          Map size-play speed are JUST RIGHT!!!!!
+                          The SKY is two sided, so GET ABOVE THE
+                          CLOUDS. In the upper SKY the BLUE CUBE's
+                          are used to say: THE END OF THE MAP IS HERE.
+Additional Credits to   : Royal Canadaian Air Force
+                          Barry Paul Kent
+                          
+================================================================
+
+* Play Information *
+
+Single Player           : No.
+Cooperative             : No.
+Deathmatch              : Yes, both teamplay and all-for-all.
+Difficulty Settings     : No
+New Sounds              : No
+New Graphics            : No
+New Music               : No
+Demos Replaced          : No.
+
+* Construction *
+
+Base                    : New level from scratch
+Editor(s) used          : Worldcraft v1.5b
+                          Iklight Light.
+                          
+Known Bugs              : No.
+Build Time              : A long time.
+
+Texture Wad used        : airquake.wad
+                          quake.wad
+Compile machine         : P166 with 36M (WIN) 
+QBSP Time               : about half minute
+Light Time (extra)      : same
+VIS Time (level 4)      : 1 sec maybe
+Brushes                 : 10
+Entities                : many
+Models                  : 8. (flares)
+
+* Other Info *
+
+Requires AirQuake TC test 21 or later.
+
+YOU KNOW THE LEGAL STUFF.
+REMEMBER IT!	

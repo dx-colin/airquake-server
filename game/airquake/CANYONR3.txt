@@ -1,0 +1,60 @@
+=========================================================================
+LEVEL: Canyon Raid Revision 3 -Airquake2
+=========================================================================
+Date: Saturday 6 March 1999
+Filename: CANYONR3.bsp
+Author: JEZ KABO
+Email: Jezk2001@yahoo.com
+Description:
+A small steep complicated canyon map esspecially designed for helos and artillery
+Two runways three bases fun I suppose.
+
+Credits:	Jeremy "Jez" James for having a cool nickname and hopefuly letting my late entry into the 
+comp	KTX for allowing me to steal 3dsmax QED2 for every thing DIAMOND MONSTER ][ For
+making my work that little bit faster and better
+
+===============
+Play Information 
+===============
+
+Game: Quake II v.3.20 with airquake2 mod v.6.5
+Level Name: Canyon Raid
+File name: CANYONR3.bsp
+Single Player: no
+Cooperative:  no
+Deathmatch 2-8 Players  : yes 
+Difficulty Settings: no.
+New graphics: no
+Anything else new: My way of making the map
+
+=========
+Construction
+=========
+
+Base            : scratch
+Build Time      : 2 days
+Editors used    : 3dsmax QED2 Quake map export
+		  Compiling utilities released by id software. 	  
+
+Compilation:	Qbsp3 	      build time:47   secs
+		Qvis3 (full)  build time:1    sec
+		Qrad3 -extra  build time:115402    secs
+============================================================================================
+Platform used   : P2-350 64MB RAM, Monster ][ 8mb
+Known Bugs      : Tanks sometimes fall through terrain
+
+To load this Q2 map:
+- extract to airq2\maps 
+- Start aq2 as you usually would do.
+- Pull down console, type "map canyonr3"
+(Do not type the quotation marks)
+		 
+
+* Copyright / Permissions *
+
+none steal my map for free
+
+*Archive info*
+Archive filename: CANYONR3.zip
+
+

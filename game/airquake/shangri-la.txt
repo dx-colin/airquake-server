@@ -1,0 +1,52 @@
+================================================================
+Title                   : Shangri-La
+Filename                : shangri-la.bsp
+Author                  : Hanh "Wanderer" Court
+Email Address           : etherealhc@netzero.net
+ICQ			: 13719765
+Description             : The home of the city over the horizon, Shangri-la (actually there's a
+			  part of the town that I live in called Shangri-la, scared the shit out
+			  of me when I found that out).
+
+			  NOTE: This map is currently available to anybody wanting to improve it.
+			  Most notably the lighting portion. E-mail me for more info.
+Credits			: Robert A. Duffy for making QE4 available to the masses (better 
+			  known as QERadiant).
+			  Tim Wright for Arghrad (cause the sun really makes the scenery here).
+				(Well, not in this case :P)
+			  QUAARD for releasing and continuing work on a very impressive TC.
+			  Scuzzy from The Hanger for uploading it to The Hanger.
+			  My Father for putting up with the skyrocketing electic bill.
+			  ComElectric for supplying that bill. :P
+================================================================
+
+* Play Information *
+
+Single Player           : I might, if I get bored but then I'll put it together with bunch of
+			  my other maps. 
+Cooperative             : No sense in even bothering with
+Deathmatch              : Yes, be interesting to a see a 8-8 Air vs Ground fight. If you do send 
+			  me the demo.
+Difficulty Settings     : Yep, choose players that suck more than you do and it's on easy 
+			  and vice versa.
+New Sounds              : I could have made some but they would require me to eat some beans.
+New Graphics            : I'll need lots of beans, chili, and a digital camera. Then, I'll need 
+			  a toilet!
+New Monsters            : No
+New Demos               : No
+New Models              : No
+QuakeC Patches          : No
+
+* Construction *
+
+Base                    : From Scratch
+Editor(s) used          : QERadient 1.0 build 135
+			  ArghRad 2.0 (no phong shading, it looks wierd with it on)
+Known Bugs              : Dynamic lights above the clouds look strange.
+Construction Time       : Unknown to this day
+Compile Time		: 30 minutes, tops.
+Comments                : I'm gonna let somebody else do the lighting. I'm too busy with 
+			  Alien Legion.
+Legal Mojo		: Decompile it and I'll shoot ya. Hack it and I'll shoot ya. 
+Hack my pc to get it and I'll shoot ya. Release a hacked version and I'll shoot ya. 
+If you want the .map file just ask.
