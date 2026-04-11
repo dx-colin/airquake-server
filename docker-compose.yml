@@ -3,6 +3,8 @@ version: "3.8"
 services:
 
   quake-airquake:
+    build:
+      context: .
     image: quake-airquake
     container_name: quake-airquake
     restart: unless-stopped
@@ -16,6 +18,8 @@ services:
       - TZ=UTC
 
   quake-stats:
+    build:
+      context: ./stats
     image: quake-stats
     container_name: quake-stats
     restart: unless-stopped
