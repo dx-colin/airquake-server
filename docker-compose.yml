@@ -11,9 +11,9 @@ services:
     ports:
       - "26000:26000/udp"
     volumes:
-      - ./game/id1:/var/games/quake/id1:ro
+      - /opt/airquake/id1:/var/games/quake/id1:ro
       # Not read-only: server writes qconsole.log here during play
-      - ./game/airquake:/var/games/quake/airquake
+      - /opt/airquake/airquake:/var/games/quake/airquake
     environment:
       - TZ=UTC
 
@@ -27,6 +27,6 @@ services:
       - "666:8080"
     volumes:
       # Read qconsole.log written by the game server
-      - ./game/airquake:/data:ro
+      - /opt/airquake/airquake:/data:ro
     depends_on:
       - quake-airquake
