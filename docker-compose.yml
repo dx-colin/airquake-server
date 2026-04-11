@@ -16,6 +16,7 @@ services:
       - /opt/airquake/airquake:/var/games/quake/airquake
     environment:
       - TZ=UTC
+      - SDL_VIDEODRIVER=offscreen
 
   quake-stats:
     build:
