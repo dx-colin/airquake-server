@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY parse_stats.py .
 
-EXPOSE 8080
+EXPOSE 26100
 
 ENTRYPOINT ["python", "parse_stats.py"]
-CMD ["--log", "/data/qconsole.log", "--serve", "--port", "8080", "--interval", "60"]
+CMD ["--log", "/data/qconsole.log", "--serve", "--port", "26100", "--interval", "60"]
