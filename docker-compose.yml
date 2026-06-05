@@ -25,7 +25,7 @@ services:
     container_name: quake-stats
     restart: unless-stopped
     ports:
-      - "666:26100/tcp"
+      - "26100:26100/tcp"
     volumes:
       # Read qconsole.log written by the game server
       - /opt/airquake/airquake:/data:ro
