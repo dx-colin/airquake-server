@@ -80,7 +80,7 @@ docker build -t quake-airquake . && docker compose up -d
 
 A stats web UI is included as a second Docker service. It reads `qconsole.log` (written by the game server into `game/airquake/`) and serves a live stats page.
 
-**Access:** http://&lt;your-server-ip&gt;:8080
+**Access:** http://&lt;your-server-ip&gt;:26100
 
 Stats tracked per player:
 - Kills, deaths, suicides, K/D ratio, kill efficiency %
