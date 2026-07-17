@@ -9,4 +9,4 @@ WORKDIR /var/games/quake
 EXPOSE 26000/udp
 
 ENTRYPOINT ["/usr/games/quakespasm"]
-CMD ["-dedicated", "-basedir", "/var/games/quake", "-game", "airquake", "+exec", "server.cfg", "+map", "airdmd1"]
+CMD ["-dedicated", "-basedir", "/var/games/quake", "-game", "airquake", "+exec", "server.cfg", "+map", "air1"]
