@@ -40,7 +40,7 @@ RUN OUT_DIR=build/tmp/server bash build/prepare-upstream.sh server
 
 # Our patch overlays on top of their prepared tree: new sv_accounts.c/.h,
 # and our modified server.h/host.c/host_cmd.c/pr_cmds.c/sv_main.c/
-# sys_linux.c/Makefile.dedicated (full files, not diffs -- see
+# sv_user.c/sys_linux.c/Makefile.dedicated (full files, not diffs -- see
 # nexquake/README.md for why, and the hook points touched in each).
 COPY nexquake/server-patch/ build/tmp/server/
 

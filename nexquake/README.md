@@ -122,6 +122,19 @@ in case any of it needs revisiting later:
 - **QuakeSpasm doesn't work with this client at all.** See above — this is
   the reason the server here is a from-source WinQuake build, not our
   QuakeSpasm binary.
+- **Custom client commands silently dropped.** `register`/`login`/
+  `logout`/`vote`/`admin` looked like they weren't reaching the server at
+  all — no server-side trace whatsoever, not even a rejection, from either
+  the browser client or a real native client (vkQuake), which ruled out a
+  client-side quirk. Root cause: `sv_user.c` (upstream WinQuake/bugfix
+  code, fetched fresh at build time — none of our other patched files
+  touch client-command handling) has a hardcoded allowlist in
+  `SV_ReadClientMessage`'s `clc_stringcmd` case gating which commands a
+  non-privileged client may send to the server at all; anything not on it
+  gets silently discarded before ever reaching `Cmd_ExecuteString`. Our
+  five custom commands were never added to it. Fixed by adding `sv_user.c`
+  to `server-patch/` (previously only referenced by the Makefile, not
+  overlaid) with those five added to the allowlist.
 - **accounts.dat and Nexus's ephemeral runtime dir.** Nexus spawns each
   server inside a throwaway temp directory that gets deleted on every
   restart. Left alone, our engine would write `accounts.dat` in there and
@@ -167,7 +180,8 @@ nexquake/
                             service) -- see "Nickname entry" above
   server-patch/             Full-file overlay applied after NexQuake's own server patches:
                             sv_accounts.c/.h (new), server.h/host.c/host_cmd.c/pr_cmds.c/
-                            sys_linux.c (modified), Makefile.dedicated (adds sv_accounts.o, -lcrypt)
+                            sv_main.c/sv_user.c/sys_linux.c (modified),
+                            Makefile.dedicated (adds sv_accounts.o, -lcrypt)
   vendor/NexQuake/          Vendored build/, bugfix/, server/ from the NexQuake repo --
                             just enough to reproduce their nqserver build; nexus/ and the
                             WASM client come from their published image, unmodified
