@@ -122,6 +122,16 @@ Nothing typed this way is ever shown to other players.
 | `vote <mapname>` | anyone | Vote for the next map (see `sv_votable_maps` in server.cfg) — passes once `sv_vote_threshold` (default 50%) of connected players have voted for the same map |
 | `admin <fraglimit\|timelimit\|hostname\|teamplay\|map\|changelevel\|kick> [args]` | admin accounts only | Change a server rule live, e.g. `admin fraglimit 40` |
 
+**Prefix each of these with `cmd `** — e.g. `cmd register <user> <pass>`,
+`cmd vote <mapname>` — not bare `register ...`/`vote ...`. Neither vkQuake
+nor NexQuake's browser client auto-forwards a command it doesn't recognize
+locally the way stock NetQuake historically did, so typing one bare just
+prints "Unknown command" locally and never reaches the server at all. `cmd`
+itself is a real, recognized client-side command in both engines, so
+whatever follows it always gets forwarded regardless of whether the client
+recognizes it. See [nexquake/README.md](nexquake/README.md)'s "Player
+commands need the cmd prefix" section for how this was diagnosed.
+
 Stats (kills/deaths/playtime) accrue automatically for whichever account
 you're logged into, and persist in `accounts.dat` in the `airquake` game
 directory — unlike the live stats page below, this survives container

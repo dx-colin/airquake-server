@@ -525,7 +525,7 @@ nextmsg:
 //				Sys_Printf ("clc_nop\n");
 				break;
 				
-			case clc_stringcmd:	
+			case clc_stringcmd:
 				s = MSG_ReadString ();
 				if (host_client->privileged)
 					ret = 2;
@@ -573,13 +573,16 @@ nextmsg:
 				// this allowlist is otherwise stock WinQuake/upstream
 				// bugfix-patch code, fetched fresh at build time (see
 				// build/prepare-upstream.sh), so these five weren't on it.
-				// Without this, non-privileged clients' register/login/
-				// logout/vote/admin stringcmds were silently dropped right
-				// here (falling through to the Con_DPrintf "tried to"
-				// branch below) before ever reaching Cmd_ExecuteString --
-				// confirmed live: no trace of the command anywhere
-				// server-side, not even a rejection, for either the
-				// browser client or a real native client (vkQuake).
+				// Without this, register/login/logout/vote/admin stringcmds
+				// that DO reach the server are silently dropped right here
+				// (falling through to the Con_DPrintf "tried to" branch
+				// below) before ever reaching Cmd_ExecuteString. Necessary
+				// but not sufficient on its own, though -- see README.md's
+				// "Player commands need the cmd prefix" section for the
+				// other half of this (neither vkQuake nor the browser
+				// client auto-forwards a command it doesn't recognize
+				// locally the way stock NetQuake historically did; players
+				// need `cmd register ...` etc, not bare `register ...`).
 				else if (Q_strncasecmp(s, "register", 8) == 0)
 					ret = 1;
 				else if (Q_strncasecmp(s, "login", 5) == 0)

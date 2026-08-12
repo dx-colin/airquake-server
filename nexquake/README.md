@@ -73,6 +73,19 @@ it's wired up.
    `login`/etc). Browser backtick-key handling is occasionally flaky
    depending on browser/keyboard layout; click into the game window first
    if it doesn't respond.
+5. **Player commands need the `cmd` prefix.** Type `cmd register <user>
+   <pass>`, `cmd login <user> <pass>`, `cmd logout`, `cmd vote <map>`, or
+   `cmd admin <subcommand> ...` — not bare `register ...`/`vote ...`/etc.
+   Neither vkQuake nor NexQuake's browser client auto-forwards a command
+   they don't recognize locally the way stock NetQuake historically did,
+   so a bare custom command just prints "Unknown command" locally and
+   never reaches the server at all — confirmed via a from-scratch,
+   diagnostic-instrumented rebuild that logs every stringcmd the server
+   actually receives: `name`/`color`/`prespawn`/`spawn`/`begin` (all
+   things the client handles natively) show up every time, `register`
+   never did, `cmd register ...` did. `cmd` itself IS a real client-side
+   command in both engines (unlike the custom ones), so it always reaches
+   the server regardless of whether the text after it is recognized.
 
 ## Nickname entry
 
