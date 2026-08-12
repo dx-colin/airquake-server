@@ -1,0 +1,124 @@
+--- pr_cmds.c
++++ pr_cmds.c
+@@ -89,8 +89,6 @@
+ 	ed = PROG_TO_EDICT(pr_global_struct->self);
+ 	ED_Print (ed);
+ 	ED_Free (ed);
+-	
+-	Host_Error ("Program error");
+ }
+ 
+ 
+@@ -1630,6 +1630,94 @@
+ 		(&pr_global_struct->parm1)[i] = client->spawn_parms[i];
+ }
+ 
++#define MAX_MAPCYCLE_TEXT 4096
++
++static qboolean SV_MapExists (char *map)
++{
++	char mappath[MAX_QPATH + 9];
++	int h;
++
++	sprintf (mappath, "maps/%s.bsp", map);
++	if (COM_OpenFile (mappath, &h) < 0)
++		return false;
++	COM_CloseFile (h);
++	return true;
++}
++
++qboolean SV_MapCycleNext (char *rotation, char *out)
++{
++	char text[MAX_MAPCYCLE_TEXT];
++	char *source;
++	char *data;
++	char prev_valid[MAX_QPATH];
++	qboolean found_current;
++	int len;
++
++	source = (char *)COM_LoadTempFile (rotation);
++	if (!source)
++		source = rotation;
++
++	len = Q_strlen(source);
++	if (len >= (int)sizeof(text))
++	{
++		Con_Printf ("mapcycle: input too long, truncating\n");
++		len = sizeof(text) - 1;
++	}
++
++	Q_memcpy (text, source, len);
++	text[len] = 0;
++
++	for (data = text ; *data ; data++)
++		if (*data == ',' || *data == '\n' || *data == '\r' || *data == '\t')
++			*data = ' ';
++
++	out[0] = 0;
++	prev_valid[0] = 0;
++	found_current = false;
++	data = text;
++	while (1)
++	{
++		data = COM_Parse (data);
++		if (!data || !com_token[0])
++			break;
++
++		if (!Q_strcasecmp(com_token, "localinfo") || !Q_strcasecmp(com_token, "serverinfo"))
++			continue;
++
++		if (Q_strlen(com_token) >= MAX_QPATH)
++		{
++			Con_Printf ("mapcycle: map name too long, ignoring: %s\n", com_token);
++			continue;
++		}
++
++		if (!SV_MapExists (com_token))
++			continue;
++
++		if (!Q_strcasecmp(com_token, prev_valid))
++			continue;
++		Q_strcpy (prev_valid, com_token);
++
++		if (!out[0])
++			Q_strcpy (out, com_token);
++		else if (found_current)
++		{
++			Q_strcpy (out, com_token);
++			return true;
++		}
++
++		if (!Q_strcasecmp(com_token, sv.name))
++			found_current = true;
++	}
++
++	if (!out[0])
++	{
++		if (source != rotation)
++			Con_Printf ("mapcycle: no valid maps found in %s\n", rotation);
++		return false;
++	}
++	return true;
++}
++
+ /*
+ ==============
+ PF_changelevel
+@@ -1660,6 +1748,17 @@
+ 	svs.changelevel_issued = true;
+ 	
+ 	s = G_STRING(OFS_PARM0);
++	{
++		char rotated[MAX_QPATH];
++		char *rotation;
++
++		rotation = Cvar_VariableString("mapcycle");
++		if (rotation && rotation[0] && SV_MapCycleNext(rotation, rotated))
++		{
++			Cbuf_AddText (va("changelevel %s\n",rotated));
++			return;
++		}
++	}
+ 	Cbuf_AddText (va("changelevel %s\n",s));
+ #endif
+ }

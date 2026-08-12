@@ -1,0 +1,242 @@
+#
+# NetQuake Server Makefile (Full build, can run as dedicated server with -dedicated flag)
+#
+# Prefer "native" builds for the target container/userland.
+#
+# Notes:
+# - In containers, `uname -m` reports the host kernel arch (often aarch64 on Pi),
+#   which is NOT what you want to key compilation decisions off of.
+# - Use the compiler target triple when available to infer the userland/toolchain.
+#
+
+# Toolchain (can be native in a container, or a cross-compiler).
+CC ?= cc
+
+# Toolchain identity (more reliable than uname -m in containers).
+CC_MACHINE := $(shell $(CC) -dumpmachine 2>/dev/null || echo unknown)
+
+# Target container/userland platform (optional; Docker-style).
+# Examples: linux/arm/v7, linux/arm64, linux/386, linux/amd64
+PLATFORM ?=
+
+# Toolchain family hints.
+IS_ARMHF_TOOLCHAIN := $(findstring gnueabihf,$(CC_MACHINE))
+IS_I386_TOOLCHAIN := $(shell echo "$(CC_MACHINE)" | grep -E '(^|-)i[3-6]86(-|$$)' >/dev/null 2>&1 && echo yes)
+IS_X86_64_TOOLCHAIN := $(findstring x86_64,$(CC_MACHINE))
+
+# Target architecture label (used for output directory naming and artifact naming).
+ifeq ($(origin ARCH), undefined)
+  ifneq (,$(findstring aarch64,$(CC_MACHINE)))
+    ARCH := aarch64
+  else ifneq (,$(IS_ARMHF_TOOLCHAIN))
+    ARCH := armv7
+  else ifneq (,$(IS_X86_64_TOOLCHAIN))
+    ARCH := x86_64
+  else ifneq (,$(IS_I386_TOOLCHAIN))
+    ARCH := i386
+  else
+    ARCH := $(shell uname -m)
+  endif
+endif
+
+# Target bitness: 32, 64, or "auto".
+BITS ?= auto
+
+# Target ABI for 32-bit builds:
+# - armhf (linux/arm/v7)
+# - i386  (linux/386)
+TARGET ?=
+BASE_CFLAGS = -std=gnu11 -Dstricmp=strcasecmp -fcommon -no-pie -DNO_X86_ASM=1 -Did386=0 -DIDGODS -fno-strict-aliasing
+RELEASE_CFLAGS = $(BASE_CFLAGS) -O3 -Wall
+DEBUG_CFLAGS = $(BASE_CFLAGS) -g -Wall
+LDFLAGS = -lm -lcrypt -rdynamic
+STATIC ?=
+
+ifneq ($(strip $(STATIC)),)
+  LDFLAGS += -static
+endif
+
+# If PLATFORM is set, use it to infer defaults (unless explicitly overridden).
+ifneq ($(strip $(PLATFORM)),)
+  ifeq ($(BITS),auto)
+    ifeq ($(PLATFORM),linux/arm/v7)
+      override BITS := 32
+      override TARGET := armhf
+    else ifeq ($(PLATFORM),linux/386)
+      override BITS := 32
+      override TARGET := i386
+    else ifeq ($(PLATFORM),linux/arm64)
+      override BITS := 64
+    else ifeq ($(PLATFORM),linux/amd64)
+      override BITS := 64
+    else
+      $(error Unsupported PLATFORM: $(PLATFORM). Use linux/arm/v7|linux/arm64|linux/386|linux/amd64)
+    endif
+  endif
+endif
+
+ifeq ($(BITS),auto)
+  # If TARGET is specified, treat that as an explicit hint.
+  ifeq ($(TARGET),armhf)
+    override BITS := 32
+  else ifeq ($(TARGET),i386)
+    override BITS := 32
+  # Otherwise infer from the toolchain.
+  else ifneq (,$(IS_ARMHF_TOOLCHAIN))
+    override BITS := 32
+    override TARGET := armhf
+  else ifneq (,$(IS_I386_TOOLCHAIN))
+    override BITS := 32
+    override TARGET := i386
+  else
+    override BITS := 64
+  endif
+endif
+
+ifeq ($(BITS),32)
+  ifeq ($(strip $(TARGET)),)
+    ifneq (,$(IS_ARMHF_TOOLCHAIN))
+      TARGET := armhf
+    else ifneq (,$(IS_I386_TOOLCHAIN))
+      TARGET := i386
+    else
+      $(error BITS=32 requires TARGET=armhf or TARGET=i386)
+    endif
+  endif
+
+  ifeq ($(TARGET),armhf)
+    # armhf build:
+    # - native (recommended): run `make` inside a linux/arm/v7 container or armhf OS
+    #   (CC_MACHINE contains gnueabihf, CC=gcc works)
+    # - cross: set CC=arm-linux-gnueabihf-gcc
+    ifeq (,$(IS_ARMHF_TOOLCHAIN))
+      $(error TARGET=armhf requires an armhf toolchain (CC_MACHINE=$(CC_MACHINE)). Run inside a linux/arm/v7 container or set CC=arm-linux-gnueabihf-gcc.)
+    endif
+
+    BASE_CFLAGS += -march=armv7-a -mfloat-abi=hard -mfpu=vfpv3-d16
+  else ifeq ($(TARGET),i386)
+    # i386 build:
+    # - native (recommended): run `make` inside a linux/386 container or i386 OS
+    # - multilib: on x86_64 hosts, gcc -m32 works when 32-bit libs are installed
+    ifneq (,$(IS_X86_64_TOOLCHAIN))
+      BASE_CFLAGS += -m32
+      LDFLAGS += -m32
+    endif
+  else
+    $(error Unsupported TARGET for BITS=32: $(TARGET). Use TARGET=armhf or TARGET=i386, or set BITS=64.)
+  endif
+endif
+
+BUILD_DIR = build-netquake-$(ARCH)-$(BITS)$(if $(strip $(TARGET)),-$(TARGET),)
+
+# Use release flags by default
+CFLAGS=$(RELEASE_CFLAGS)
+
+# NetQuake source files (server + client combined)
+# Full WinQuake build with software renderer
+OBJS = \
+	$(BUILD_DIR)/chase.o \
+	$(BUILD_DIR)/cl_demo.o \
+	$(BUILD_DIR)/cl_input.o \
+	$(BUILD_DIR)/cl_main.o \
+	$(BUILD_DIR)/cl_parse.o \
+	$(BUILD_DIR)/cl_tent.o \
+	$(BUILD_DIR)/cmd.o \
+	$(BUILD_DIR)/common.o \
+	$(BUILD_DIR)/console.o \
+	$(BUILD_DIR)/crc.o \
+	$(BUILD_DIR)/cvar.o \
+	$(BUILD_DIR)/host.o \
+	$(BUILD_DIR)/host_cmd.o \
+	$(BUILD_DIR)/keys.o \
+	$(BUILD_DIR)/mathlib.o \
+	$(BUILD_DIR)/menu.o \
+	$(BUILD_DIR)/net_bsd.o \
+	$(BUILD_DIR)/net_dgrm.o \
+	$(BUILD_DIR)/net_loop.o \
+	$(BUILD_DIR)/net_main.o \
+	$(BUILD_DIR)/net_udp.o \
+	$(BUILD_DIR)/net_vcr.o \
+	$(BUILD_DIR)/pr_cmds.o \
+	$(BUILD_DIR)/pr_edict.o \
+	$(BUILD_DIR)/pr_exec.o \
+	$(BUILD_DIR)/r_part.o \
+	$(BUILD_DIR)/sbar.o \
+	$(BUILD_DIR)/sv_accounts.o \
+	$(BUILD_DIR)/sv_main.o \
+	$(BUILD_DIR)/sv_move.o \
+	$(BUILD_DIR)/sv_phys.o \
+	$(BUILD_DIR)/sv_user.o \
+	$(BUILD_DIR)/view.o \
+	$(BUILD_DIR)/wad.o \
+	$(BUILD_DIR)/world.o \
+	$(BUILD_DIR)/zone.o \
+	$(BUILD_DIR)/d_edge.o \
+	$(BUILD_DIR)/d_fill.o \
+	$(BUILD_DIR)/d_init.o \
+	$(BUILD_DIR)/d_modech.o \
+	$(BUILD_DIR)/d_part.o \
+	$(BUILD_DIR)/d_polyse.o \
+	$(BUILD_DIR)/d_scan.o \
+	$(BUILD_DIR)/d_sky.o \
+	$(BUILD_DIR)/d_sprite.o \
+	$(BUILD_DIR)/d_surf.o \
+	$(BUILD_DIR)/d_vars.o \
+	$(BUILD_DIR)/d_zpoint.o \
+	$(BUILD_DIR)/draw.o \
+	$(BUILD_DIR)/model.o \
+	$(BUILD_DIR)/nonintel.o \
+	$(BUILD_DIR)/r_aclip.o \
+	$(BUILD_DIR)/r_alias.o \
+	$(BUILD_DIR)/r_bsp.o \
+	$(BUILD_DIR)/r_draw.o \
+	$(BUILD_DIR)/r_edge.o \
+	$(BUILD_DIR)/r_efrag.o \
+	$(BUILD_DIR)/r_light.o \
+	$(BUILD_DIR)/r_main.o \
+	$(BUILD_DIR)/r_misc.o \
+	$(BUILD_DIR)/r_sky.o \
+	$(BUILD_DIR)/r_sprite.o \
+	$(BUILD_DIR)/r_surf.o \
+	$(BUILD_DIR)/r_vars.o \
+	$(BUILD_DIR)/screen.o \
+	$(BUILD_DIR)/cd_null.o \
+	$(BUILD_DIR)/in_null.o \
+	$(BUILD_DIR)/snd_null.o \
+	$(BUILD_DIR)/sys_linux.o \
+	$(BUILD_DIR)/vid_null.o
+
+.PHONY: all clean debug info
+
+all: $(BUILD_DIR)/nqserver
+
+debug: CFLAGS=$(DEBUG_CFLAGS)
+debug: all
+
+$(BUILD_DIR)/nqserver: $(OBJS)
+	@echo "Linking NetQuake server..."
+	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
+	@echo "Built: $@ ($(ARCH))"
+	@echo "Run with -dedicated flag for server mode"
+
+# Build source files
+$(BUILD_DIR)/%.o: %.c
+	@mkdir -p $(BUILD_DIR)
+	@echo "Compiling $<..."
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -rf $(BUILD_DIR)
+	@echo "Cleaned $(BUILD_DIR)"
+
+# Show configuration
+info:
+	@echo "Architecture: $(ARCH)"
+	@echo "Build directory: $(BUILD_DIR)"
+	@echo "Compiler: $(CC)"
+	@echo "CC machine: $(CC_MACHINE)"
+	@echo "PLATFORM: $(PLATFORM)"
+	@echo "BITS: $(BITS)"
+	@echo "TARGET: $(TARGET)"
+	@echo "Flags: $(CFLAGS)"
+	@echo "LDFlags: $(LDFLAGS)"

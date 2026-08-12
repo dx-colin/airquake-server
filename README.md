@@ -1,6 +1,12 @@
 # Airquake Server
 
-A Dockerised Quake 1 dedicated server running the Airquake mod.
+A Dockerised Quake 1 dedicated server running the Airquake mod, on a
+patched QuakeSpasm engine (vendored at [vendor/quakespasm](vendor/quakespasm),
+built from source rather than the stock package — see
+[vendor/quakespasm/Quake/sv_accounts.c](vendor/quakespasm/Quake/sv_accounts.c)
+for the patch itself). The patch adds player accounts, persistent
+per-account stats, map voting, and an admin role — see
+[Accounts, Admin & Voting](#accounts-admin--voting) below.
 
 ## Prerequisites
 
@@ -38,24 +44,47 @@ The `game/` directory is gitignored — you need to populate it manually.
 ## Building & Running
 
 ```bash
-# Build the image
+# Build the image (compiles the patched QuakeSpasm engine from source --
+# takes longer than a plain apt install, roughly a minute)
 docker build -t quake-airquake .
 
 # Run with Docker Compose
 docker compose up -d
 ```
 
+To create the first admin account, set `AIRQUAKE_ADMIN_USER` /
+`AIRQUAKE_ADMIN_PASS` before starting (e.g. in a `.env` file next to
+`docker-compose.yml`, or exported in your shell) — see
+[Accounts, Admin & Voting](#accounts-admin--voting).
+
+Iterating on the engine patch itself (`vendor/quakespasm/Quake/*.c`) is much
+faster outside Docker: install `build-essential libsdl2-dev libgl1-mesa-dev
+libcrypt-dev`, then `make -C vendor/quakespasm/Quake USE_SDL2=1
+USE_CODEC_WAVE=0 USE_CODEC_FLAC=0 USE_CODEC_MP3=0 USE_CODEC_VORBIS=0
+USE_CODEC_OPUS=0 USE_CODEC_MIKMOD=0 USE_CODEC_XMP=0 USE_CODEC_MODPLUG=0
+USE_CODEC_UMX=0` — same flags the Dockerfile's builder stage uses, just
+without the image-build round trip. Reserve the full `docker build` for
+verifying the actual deployable image.
+
 ## Deploying via Portainer
 
-1. Copy this repo to your Docker host (or point Portainer at the Git repo)
-2. **Stacks → Add Stack → Repository** (or paste `docker-compose.yml` into the Web editor)
-3. If using Web editor: build both images first on the host:
+**Option A — Git repo (Portainer builds the images):**
+
+1. **Stacks → Add Stack → Repository**, point it at this repo
+2. Compose path: `docker-compose.yml`
+3. Deploy the stack
+
+**Option B — Upload / Web editor from your PC (no repo access, so images must be prebuilt):**
+
+1. Build both images on the Docker host:
    ```bash
    docker build -t quake-airquake .
    docker build -t quake-stats ./stats
    ```
-   Then replace the `build:` blocks with `image: quake-airquake` / `image: quake-stats`
-4. Deploy the stack
+2. **Stacks → Add Stack**, then either paste [docker-compose.portainer.yml](docker-compose.portainer.yml) into the Web editor, or use **Upload** and select that file
+3. Deploy the stack
+
+Both options bind-mount `/opt/airquake/id1` and `/opt/airquake/airquake` from the host — make sure your game files are there first (see [Directory Structure](#directory-structure) above, adjusted for the host path).
 
 ## Configuration
 
@@ -70,11 +99,40 @@ Server settings live in [game/airquake/server.cfg](game/airquake/server.cfg) —
 | `deathmatch`  | `1`               | Game mode (`1` = DM)                     |
 | `teamplay`    | `0`               | `0` = FFA, `1` = team damage on          |
 
-The starting map is set in [Dockerfile](Dockerfile) (`+map air1`). To change it, edit the Dockerfile and rebuild:
+The starting map is picked randomly at each container start by
+[entrypoint.sh](entrypoint.sh), from a whitelist of maps confirmed to
+actually support the AirQuake total conversion (`AIRQUAKE_MAPS` in that
+script — the rest of the mod's `maps/` folder is generic vanilla-Quake DM
+maps and one Quake II map that break spawning if loaded). That same list is
+mirrored into `sv_votable_maps` in [server.cfg](game/airquake/server.cfg)
+for `/vote` — update both if you add or remove maps.
 
-```bash
-docker build -t quake-airquake . && docker compose up -d
-```
+## Accounts, Admin & Voting
+
+Since AirQuake ships only a compiled `PROGS.DAT` (no mod source exists to
+add real UI for this), all of this works through plain console commands —
+type them at your own local Quake console (the `~` key), not in chat.
+Nothing typed this way is ever shown to other players.
+
+| Command | Who | What |
+|---|---|---|
+| `register <user> <pass>` | anyone | Create an account and log into it |
+| `login <user> <pass>` | anyone | Log into an existing account |
+| `logout` | anyone | Log out |
+| `vote <mapname>` | anyone | Vote for the next map (see `sv_votable_maps` in server.cfg) — passes once `sv_vote_threshold` (default 50%) of connected players have voted for the same map |
+| `admin <fraglimit\|timelimit\|hostname\|teamplay\|map\|changelevel\|kick> [args]` | admin accounts only | Change a server rule live, e.g. `admin fraglimit 40` |
+
+Stats (kills/deaths/playtime) accrue automatically for whichever account
+you're logged into, and persist in `accounts.dat` in the `airquake` game
+directory — unlike the live stats page below, this survives container
+restarts. Playing without logging in still works, it just isn't tracked.
+
+**First admin account:** set `AIRQUAKE_ADMIN_USER` / `AIRQUAKE_ADMIN_PASS`
+as environment variables on the `quake-airquake` service (see
+[docker-compose.yml](docker-compose.yml)) and restart the container — this
+creates the account if it doesn't exist, or resets its password/admin flag
+if it does, so it also doubles as a password-reset path. Leave both unset
+to skip bootstrapping.
 
 ## Stats
 
@@ -102,6 +160,14 @@ The stats page refreshes every 60 seconds automatically.
 Default port: **26000 UDP** — make sure this is open on your firewall/router.
 
 Connect in Quake with: `connect <your-server-ip>`
+
+## Browser Play
+
+You can also play in a browser tab, no Quake client install needed — see
+[nexquake/README.md](nexquake/README.md). Same accounts/admin/voting as
+above (they share the same account store). **Read the privacy note in that
+README before exposing it beyond your LAN** — the browser client streams
+game files, including the retail `PAK1.PAK`, to anyone who loads the page.
 
 ## Logs
 

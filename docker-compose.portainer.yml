@@ -1,0 +1,49 @@
+version: "3.8"
+
+# Portainer stack file for the "Upload" / "Web editor" deployment methods.
+# These methods don't have access to this repo's build context (Dockerfile,
+# stats/), so the two images must already exist on the Docker host before
+# deploying this stack. Build them there first:
+#
+#   docker build -t quake-airquake .
+#   docker build -t quake-stats ./stats
+#
+# Then in Portainer: Stacks -> Add Stack -> Web editor (paste this file) or
+# Upload (select this file) -> Deploy the stack.
+#
+# If you instead point Portainer at the Git repo, use docker-compose.yml
+# (the one with build: blocks) — Portainer will build the images for you.
+
+services:
+
+  quake-airquake:
+    image: quake-airquake
+    container_name: quake-airquake
+    restart: unless-stopped
+    ports:
+      - "26000:26000/udp"
+    volumes:
+      - /opt/airquake/id1:/var/games/quake/id1:ro
+      # Not read-only: server writes qconsole.log here during play
+      - /opt/airquake/airquake:/var/games/quake/airquake
+    environment:
+      - TZ=UTC
+      - SDL_VIDEODRIVER=offscreen
+      # First admin account, bootstrapped/reset on every start (see
+      # entrypoint.sh). Set these via Portainer's stack "Environment
+      # variables" UI to create/reset the admin login.
+      - AIRQUAKE_ADMIN_USER=${AIRQUAKE_ADMIN_USER:-}
+      - AIRQUAKE_ADMIN_PASS=${AIRQUAKE_ADMIN_PASS:-}
+
+  quake-stats:
+    image: quake-stats
+    container_name: quake-stats
+    restart: unless-stopped
+    ports:
+      - "26100:26100/tcp"
+    volumes:
+      # Reads qconsole.log written by the game server. Not read-only: also
+      # writes into console.fifo to send welcome messages back to it.
+      - /opt/airquake/airquake:/data
+    depends_on:
+      - quake-airquake

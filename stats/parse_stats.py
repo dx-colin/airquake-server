@@ -573,6 +573,84 @@ def render_html(parser: LogParser) -> str:
 </html>"""
 
 
+# ── Welcome messages ─────────────────────────────────────────────────────────
+#
+# The game server has no rcon (NetQuake never implemented it), so the only
+# way to inject a "say" broadcast is via its stdin console, wired up cross-
+# container as a FIFO on the shared volume (see entrypoint.sh). This tails
+# qconsole.log incrementally for new joins and writes a welcome "say" back.
+
+_CONTROL_CHARS = re.compile(r"[\r\n\x00-\x1f]")
+
+
+def _sanitize_for_console(name: str) -> str:
+    # A player name containing a newline would inject an arbitrary second
+    # console command into the FIFO stream -- strip control chars entirely.
+    return _CONTROL_CHARS.sub("", name).strip()
+
+
+def _send_console_command(fifo_path: Path, command: str) -> None:
+    try:
+        with open(fifo_path, "w", encoding="utf-8") as fh:
+            fh.write(command + "\n")
+    except OSError as e:
+        print(f"welcome: failed to write console command: {e}")
+
+
+def _welcome_loop(log_path: Path, fifo_path: Path, hostname: str) -> None:
+    # qconsole.log gets truncated by -condebug on every game-server restart
+    # (map changes, redeploys, crashes). If our read position ends up past
+    # the current file size, the file was rotated out from under us --
+    # reopen and start fresh from the (new) end rather than sitting on a
+    # stale offset that never yields data again.
+    greeted: set[str] = set()
+    fh = None
+    try:
+        while True:
+            if fh is None:
+                if not log_path.exists():
+                    time.sleep(1)
+                    continue
+                fh = open(log_path, encoding="utf-8", errors="replace")
+                fh.seek(0, 2)  # start at end -- only react to joins from now on
+
+            try:
+                size = log_path.stat().st_size
+            except OSError:
+                size = 0
+            if size < fh.tell():
+                fh.close()
+                fh = None
+                continue
+
+            line = fh.readline()
+            if not line:
+                time.sleep(1)
+                continue
+            line = line.strip()
+            m = _TIMESTAMP.match(line)
+            if m:
+                line = m.group(2).strip()
+            m = _CONNECT.match(line)
+            if not m:
+                continue
+            player = _extract_name(m, "a", "b", "c")
+            if not player:
+                continue
+            safe_name = _sanitize_for_console(player)
+            if not safe_name or safe_name in greeted:
+                continue
+            greeted.add(safe_name)
+            print(f"welcome: greeting new player {safe_name!r}")
+            _send_console_command(
+                fifo_path,
+                f"say Welcome to {hostname}, {safe_name}! Good luck out there.",
+            )
+    finally:
+        if fh is not None:
+            fh.close()
+
+
 # ── Web server ────────────────────────────────────────────────────────────────
 
 class StatsHandler(http.server.BaseHTTPRequestHandler):
@@ -610,6 +688,8 @@ def main():
     ap.add_argument("--serve",    action="store_true", help="Serve stats over HTTP instead of writing a file")
     ap.add_argument("--port",     type=int, default=8080, help="HTTP port (default: 8080)")
     ap.add_argument("--interval", type=int, default=60, help="Refresh interval in seconds when serving (default: 60)")
+    ap.add_argument("--fifo", help="Path to the game server's console FIFO, to enable welcome messages")
+    ap.add_argument("--hostname", default="the server", help="Server name used in the welcome message")
     args = ap.parse_args()
 
     log_path = Path(args.log)
@@ -626,6 +706,12 @@ def main():
         # Background refresh loop
         t = threading.Thread(target=_refresh_loop, args=(log_path, args.interval), daemon=True)
         t.start()
+        if args.fifo:
+            print(f"Watching for joins to greet via {args.fifo}")
+            tw = threading.Thread(
+                target=_welcome_loop, args=(log_path, Path(args.fifo), args.hostname), daemon=True
+            )
+            tw.start()
         httpd = http.server.HTTPServer(("0.0.0.0", args.port), StatsHandler)
         httpd.serve_forever()
     else:

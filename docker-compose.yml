@@ -17,6 +17,10 @@ services:
     environment:
       - TZ=UTC
       - SDL_VIDEODRIVER=offscreen
+      # First admin account, bootstrapped/reset on every start (see
+      # entrypoint.sh) -- set these to create/reset the admin login.
+      - AIRQUAKE_ADMIN_USER=${AIRQUAKE_ADMIN_USER:-}
+      - AIRQUAKE_ADMIN_PASS=${AIRQUAKE_ADMIN_PASS:-}
 
   quake-stats:
     build:
@@ -27,7 +31,70 @@ services:
     ports:
       - "26100:26100/tcp"
     volumes:
-      # Read qconsole.log written by the game server
-      - /opt/airquake/airquake:/data:ro
+      # Reads qconsole.log written by the game server. Not read-only: also
+      # writes into console.fifo to send welcome messages back to it.
+      - /opt/airquake/airquake:/data
     depends_on:
       - quake-airquake
+
+  # Browser play via NexQuake (https://github.com/0xBrsm/NexQuake) -- a
+  # WASM Quake client + Go relay that tunnels UDP over WebSocket. NOT our
+  # QuakeSpasm build -- that engine's wire format doesn't work with this
+  # browser client (confirmed empirically, see nexquake/README.md).
+  # nexquake/Dockerfile instead builds NexQuake's own WinQuake-derived
+  # nqserver from source with our accounts/login/voting/admin patch
+  # (nexquake/server-patch/) layered on top, so accounts/voting/admin work
+  # the same way here as on quake-airquake. A separate server instance on
+  # its own port (see nexquake/game/servers.ini) -- but shares the SAME
+  # accounts.dat as quake-airquake (via the second volume + -accountsdir in
+  # servers.ini), so one account/admin bootstrap works from both native
+  # client and browser. Known limitation: if both services are written to
+  # at literally the same moment (e.g. two people registering within the
+  # same instant on different entry points), whichever save() lands second
+  # wins -- there's no cross-process locking. Low-stakes for a small friends
+  # server (worst case is a rare re-register), not attempted here.
+  nexquake:
+    build:
+      context: .
+      dockerfile: nexquake/Dockerfile
+    image: airquake-nexquake
+    container_name: airquake-nexquake
+    restart: unless-stopped
+    # No host port published -- Traefik (already running on this host, see
+    # the labels below) is the sole ingress, terminating TLS and proxying
+    # in over traefik_web. Deliberately not setting EXTERNAL_URL/relying on
+    # Nexus's own ACME support: Traefik already owns 80/443 and the "le"
+    # resolver on this host, so this runs in NexQuake's documented
+    # "behind a front" mode (plain HTTP/WS internally).
+    networks:
+      - traefik_web
+    volumes:
+      # game/id1/common + game/airquake/{common,client,server} -- see
+      # nexquake/README.md for layout and how it was derived from game/.
+      - /opt/airquake/nexquake-game:/app/game
+      # Shared account store with quake-airquake -- see -accountsdir in
+      # nexquake/game/servers.ini.
+      - /opt/airquake/airquake:/app/accounts
+    environment:
+      # Auto-connect on page load -- fine with exactly one server defined.
+      - CL_ARGS=+connect
+      # Traefik forwards the real client IP in this header -- without it,
+      # source-IP bans/logging would target Traefik's own container IP.
+      - AUTH_CLIENT_IP_HEADER=X-Forwarded-For
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik_web
+      - traefik.http.routers.airquake.rule=Host(`airquake.eragon.io`)
+      - traefik.http.routers.airquake.entrypoints=websecure
+      - traefik.http.routers.airquake.tls.certresolver=le
+      - traefik.http.services.airquake.loadbalancer.server.port=1337
+    healthcheck:
+      test: ["CMD", "/app/bin/nexus", "healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  traefik_web:
+    external: true

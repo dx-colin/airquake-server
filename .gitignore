@@ -1,5 +1,6 @@
-# Server logs (written by Quake into game/airquake/)
+# Server logs and runtime state (written by Quake into game/airquake/)
 game/airquake/qconsole.log
+game/airquake/console.fifo
 
 # Quake game files (large binaries, may be proprietary)
 game/id1/
@@ -12,3 +13,21 @@ game/airquake/*.bsp
 game/airquake/*.DAT
 game/airquake/*.dat
 !game/airquake/server.cfg
+
+# Build artifacts from compiling vendor/quakespasm locally (outside Docker)
+vendor/quakespasm/Quake/*.o
+vendor/quakespasm/Quake/*.d
+vendor/quakespasm/Quake/quakespasm
+
+# nexquake/game/ is a copy of game/ reorganised into NexQuake's
+# common/client/server layout (see nexquake/README.md) -- same proprietary
+# game-data concern as game/ above, so ignored the same way. The small text
+# configs (servers.ini, client/*.CFG, server/*.cfg) are kept tracked.
+nexquake/game/id1/
+nexquake/game/airquake/common/
+nexquake/game/airquake/accounts.dat
+
+# Local test-only accounts store used while developing the nexquake
+# integration (see docker-compose.yml's real /opt/airquake/airquake mount
+# for the actual shared account store).
+nexquake/local-accounts/

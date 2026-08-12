@@ -1,0 +1,5 @@
+# Shell scripts must keep LF line endings regardless of platform --
+# Windows git checkouts otherwise convert to CRLF, which breaks the
+# `#!/usr/bin/env bash` shebang inside Docker builds (see nexquake/Dockerfile
+# / nexquake/vendor/NexQuake/build/*.sh).
+*.sh text eol=lf
