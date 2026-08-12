@@ -67,7 +67,7 @@ else
   echo "prepare-game-data: warning: server.cfg not found in $SRC/airquake" >&2
 fi
 
-# quakespasm always looks for "maps/<name>.bsp" (see sv_main.c:
+# quakespasm/nqserver always look for "maps/<name>.bsp" (see sv_main.c:
 # q_snprintf(sv.modelname, ..., "maps/%s.bsp", server)) -- without an
 # actual lowercase maps/ subdirectory, +map/vote requests fail with
 # "Couldn't spawn server maps/<name>.bsp" and silently fall back to id1's
@@ -80,12 +80,23 @@ fi
 # would have copied that symlink verbatim, so start this directory fresh
 # rather than inheriting it (copying a real file onto a path that's a
 # symlink back to itself fails with "are the same file").
+#
+# Destination filename is forced to $name.bsp (lowercase, matching
+# AIRQUAKE_MAPS/sv_votable_maps) rather than preserving the source file's
+# own casing -- production's real BSPs are stored uppercase
+# (e.g. AIRFOX.BSP) with a lowercase symlink alias layered on top by
+# entrypoint.sh for the native service's benefit, but that aliasing never
+# happens here, and unlike the native quakespasm binary, this engine
+# (nqserver, WinQuake-derived) does a plain case-sensitive file lookup with
+# no fallback -- so copying with the source's uppercase name left every
+# non-default map (and the default map itself) unloadable in the browser,
+# even though the whitelist/vote/default-map logic all use lowercase names.
 rm -rf "$DST/airquake/common/maps"
 mkdir -p "$DST/airquake/common/maps"
 for name in $AIRQUAKE_MAPS; do
   match=$(find "$DST/airquake/common" -iname "${name}.bsp" -type f | head -n1)
   if [ -n "$match" ]; then
-    cp "$match" "$DST/airquake/common/maps/$(basename "$match")"
+    cp "$match" "$DST/airquake/common/maps/${name}.bsp"
   else
     echo "prepare-game-data: warning: $name.bsp not found in $SRC/airquake" >&2
   fi
