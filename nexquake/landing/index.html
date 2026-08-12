@@ -89,7 +89,7 @@
     var nick = input.value.trim().replace(/[";]/g, '').slice(0, 20);
     if (!nick) return;
     localStorage.setItem('airquake-nickname', nick);
-    location.href = '/play/?+name&' + encodeURIComponent(nick);
+    location.href = 'https://play.airquake.eragon.io/?+name&' + encodeURIComponent(nick);
   });
 })();
 </script>

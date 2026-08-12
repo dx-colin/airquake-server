@@ -26,9 +26,11 @@ It shares the **same `accounts.dat`** as `quake-airquake` (see
 (`AIRQUAKE_ADMIN_USER`/`PASS` on the `quake-airquake` service) works from
 both native client and browser.
 
-The domain root is a small nickname-entry page (`landing/index.html`,
-served by the `airquake-landing` service), not the game itself — see
-"Nickname entry" below for why and how it's wired up.
+The domain root (`airquake.eragon.io`) is a small nickname-entry page
+(`landing/index.html`, served by the `airquake-landing` service), not the
+game itself. The game lives on its own subdomain,
+`play.airquake.eragon.io` — see "Nickname entry" below for why and how
+it's wired up.
 
 ## Setup
 
@@ -38,8 +40,8 @@ served by the `airquake-landing` service), not the game itself — see
 2. `docker compose up -d nexquake airquake-landing` (or just
    `docker compose up -d` for everything).
 3. Open `http://<your-server-ip>/` (through Traefik) — or
-   `http://<your-server-ip>:1337/play/` to hit the game directly, bypassing
-   the landing page and Traefik.
+   `http://<your-server-ip>:1337/` to hit the game directly, bypassing the
+   landing page and Traefik.
 4. In-game, press **`~`** (tilde/backtick) to open the real console (not
    chat/`say` — text typed there is public and won't reach `register`/
    `login`/etc). Browser backtick-key handling is occasionally flaky
@@ -52,21 +54,22 @@ NexQuake's client is the standard Quake UI (Setup menu / console `name`
 command) — there's no web-native nickname box, and `CL_ARGS=+connect`
 (auto-connect on load) means players never even see that menu. So instead:
 `airquake-landing` serves a tiny static page (`landing/index.html`) at the
-domain root with a nickname field. Submitting it redirects to
-`/play/?+name&<nickname>`, which `nexquake`'s `CL_URL_ARGS=1` turns into an
-extra `+name <nickname>` client startup arg on top of `CL_ARGS`, so the
-player connects with that name already set.
+main domain root with a nickname field. Submitting it redirects to
+`https://play.airquake.eragon.io/?+name&<nickname>`, which `nexquake`'s
+`CL_URL_ARGS=1` turns into an extra `+name <nickname>` client startup arg
+on top of `CL_ARGS`, so the player connects with that name already set.
 
-`nexquake` itself is *not* at the domain root — it's routed at `/play`
-(`airquake-strip-play` middleware strips that prefix before the request
-reaches Nexus, which never knows it's not at root). This only works
-because the client's own asset references (`index.js`, `shell.css`, etc.)
-are all relative paths, not absolute -- confirmed by inspecting the served
-HTML before relying on it. `airquake-landing` and `nexquake` are separate
-Traefik routers on the same `Host` rule, split by path
-(`airquake-landing` priority 1 catches everything else, `airquake-game`
-priority 10 catches `/play*`) — both reuse the same Let's Encrypt
-certificate, no extra DNS record needed.
+`nexquake` is on its own subdomain rather than a subpath of the main
+domain (e.g. `/play`) — a subpath was tried first and doesn't work: the
+client's compiled JS calls several of its own API endpoints
+(`/gamedir`, `/connect`, `/events`, `/rcon`, `/pak/`, `/nqseed/`, ...) via
+hardcoded *absolute* root paths, not just relative asset references, so
+none of them survive being proxied under a prefix. A separate subdomain
+sidesteps this entirely — Nexus is genuinely at the root of its own
+hostname, so every absolute path resolves correctly with no rewriting.
+Costs one extra DNS record (`play.airquake.eragon.io`, added to the same
+Cloudflare DDNS config as the main domain) and one extra Let's Encrypt
+cert, both handled the same way as the main domain's.
 
 ## Important: keep this private
 

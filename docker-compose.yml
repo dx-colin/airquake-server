@@ -54,12 +54,14 @@ services:
   # wins -- there's no cross-process locking. Low-stakes for a small friends
   # server (worst case is a rare re-register), not attempted here.
   #
-  # Served at /play/, not the domain root -- airquake-landing (below) owns
-  # the root path with a nickname-entry page. The client's own asset
-  # references (index.js, shell.css, etc.) are all relative, so it works
-  # fine off a subpath; airquake-strip-play (below) removes the /play
-  # prefix before the request reaches Nexus, which has no idea it's not at
-  # root.
+  # Served on its own subdomain (play.airquake.eragon.io), not the main
+  # domain root -- airquake-landing (below) owns that with a nickname-entry
+  # page. A subpath (e.g. /play) was tried first and doesn't work: the
+  # client's compiled JS calls several API endpoints via hardcoded absolute
+  # root paths (/gamedir, /connect, /events, /rcon, /pak/, /nqseed/, ...),
+  # not just relative asset references -- confirmed by grepping index.js.
+  # None of those survive a path prefix, so Nexus needs to genuinely be at
+  # the root of its own hostname.
   nexquake:
     build:
       context: .
@@ -96,12 +98,9 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik_web
-      - traefik.http.routers.airquake-game.rule=Host(`airquake.eragon.io`) && PathPrefix(`/play`)
-      - traefik.http.routers.airquake-game.priority=10
+      - traefik.http.routers.airquake-game.rule=Host(`play.airquake.eragon.io`)
       - traefik.http.routers.airquake-game.entrypoints=websecure
       - traefik.http.routers.airquake-game.tls.certresolver=le
-      - traefik.http.routers.airquake-game.middlewares=airquake-strip-play@docker
-      - traefik.http.middlewares.airquake-strip-play.stripprefix.prefixes=/play
       - traefik.http.services.airquake-game.loadbalancer.server.port=1337
     healthcheck:
       test: ["CMD", "/app/bin/nexus", "healthcheck"]
@@ -111,9 +110,10 @@ services:
       start_period: 40s
 
   # Nickname-entry landing page at the domain root -- see
-  # nexquake/landing/index.html. Redirects into nexquake (above) at /play/
-  # with a ?+name&<nick> query string, which CL_URL_ARGS on nexquake turns
-  # into the player's in-game name. Plain static file, no build step.
+  # nexquake/landing/index.html. Redirects to play.airquake.eragon.io
+  # (nexquake, above) with a ?+name&<nick> query string, which CL_URL_ARGS
+  # on nexquake turns into the player's in-game name. Plain static file, no
+  # build step.
   airquake-landing:
     image: nginx:alpine
     container_name: airquake-landing
