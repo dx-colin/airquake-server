@@ -2,10 +2,20 @@
 
 Lets you (and friends) play AirQuake in a browser tab, using
 [NexQuake](https://github.com/0xBrsm/NexQuake) as a WASM Quake client + Go
-relay that tunnels UDP over WebSocket.
+relay that tunnels UDP over WebSocket. `nqserver`, the dedicated server
+this builds, is also the **single shared game server for native play
+too** — it speaks plain NetQuake protocol 15, so a real client (vkQuake,
+QuakeSpasm, ...) can `connect <host>:26001` directly, landing in the same
+game as browser players. The old `quake-airquake` service (native-only,
+`../vendor/quakespasm`) is retired from public play for exactly this
+reason — it and `nqserver` used to be two separate, unlinked game worlds
+that only shared an account database, which meant native and browser
+players could never actually play together. `quake-airquake`'s image is
+kept around only for its one-shot `-createadmin` admin bootstrap (see
+`docker-compose.yml`'s comment on that service).
 
 **The server binary is NOT our QuakeSpasm build** (`../vendor/quakespasm`,
-used by the main `quake-airquake` service). QuakeSpasm's wire format
+used by the retired `quake-airquake` service). QuakeSpasm's wire format
 doesn't work with NexQuake's browser client — confirmed empirically during
 development: a connection through it hung forever at signon, identically
 for AirQuake and for completely vanilla `id1` content, while NexQuake's own
@@ -20,11 +30,27 @@ rationale), ported onto the older codebase — mechanical differences only
 (no `q_strlcpy`/`q_snprintf` here, `Sys_FloatTime` instead of
 `Sys_DoubleTime`, etc.), same command set, same account store format.
 
-It shares the **same `accounts.dat`** as `quake-airquake` (see
-`docker-compose.yml`'s `nexquake` volumes and `-accountsdir` in
-`servers.ini`), so one account and one admin bootstrap
-(`AIRQUAKE_ADMIN_USER`/`PASS` on the `quake-airquake` service) works from
-both native client and browser.
+It shares the **same `accounts.dat`** that `quake-airquake`'s one-shot
+`-createadmin` bootstrap writes to (see `docker-compose.yml`'s `nexquake`
+volumes and `-accountsdir` in `servers.ini`), so one admin bootstrap works
+for both native and browser login.
+
+## Native play
+
+Connect directly to `nqserver`'s published port: `connect
+airquake.eragon.io:26001` (or the LAN IP, e.g. `192.168.22.250:26001`, if
+you're on the same home network as the host — see the NAT hairpin note
+below). Requires port `26001/udp` forwarded on the router, same as `26000`
+was for the old native-only setup.
+
+If you're testing from the *same* home network the server runs on,
+connecting via the public domain can hang at "Connection Accepted" and
+never load in — that's NAT hairpin/loopback (common on consumer routers:
+traffic has to loop back out through the router and back in, and a lot of
+routers handle that badly for UDP). Confirmed via packet capture — the
+symptom looks exactly like a broken signon, but it's the router. Use the
+LAN IP directly when you're home; the public domain works fine from
+anywhere else.
 
 The domain root (`airquake.eragon.io`) is a small nickname-entry page
 (`landing/index.html`, served by the `airquake-landing` service), not the

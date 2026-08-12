@@ -2,14 +2,21 @@ version: "3.8"
 
 services:
 
+  # Retired from public play -- nqserver (below) is now the single shared
+  # game server for both native and browser clients (it speaks plain
+  # NetQuake protocol 15, which native clients can also connect to
+  # directly, so there's no need for two separate, unlinked game worlds
+  # anymore). Kept defined (not deleted) so its image/entrypoint.sh remain
+  # available for the one-shot `-createadmin` admin bootstrap, but the
+  # "manual" profile means `docker compose up -d` (no args) skips it --
+  # start explicitly with `docker compose --profile manual run --rm
+  # quake-airquake -createadmin <user> <pass>` when needed.
   quake-airquake:
     build:
       context: .
     image: quake-airquake
     container_name: quake-airquake
-    restart: unless-stopped
-    ports:
-      - "26000:26000/udp"
+    profiles: ["manual"]
     volumes:
       - /opt/airquake/id1:/var/games/quake/id1:ro
       # Not read-only: server writes qconsole.log here during play
@@ -31,28 +38,23 @@ services:
     ports:
       - "26100:26100/tcp"
     volumes:
-      # Reads qconsole.log written by the game server. Not read-only: also
-      # writes into console.fifo to send welcome messages back to it.
-      - /opt/airquake/airquake:/data
+      # Reads nqserver's per-session logs (see nexquake's /app/logs mount
+      # above) -- read-only, no FIFO/welcome-message equivalent wired up
+      # for nqserver yet (see stats/Dockerfile's CMD comment).
+      - /opt/airquake/nexquake-logs:/logs:ro
     depends_on:
-      - quake-airquake
+      - nexquake
 
-  # Browser play via NexQuake (https://github.com/0xBrsm/NexQuake) -- a
-  # WASM Quake client + Go relay that tunnels UDP over WebSocket. NOT our
-  # QuakeSpasm build -- that engine's wire format doesn't work with this
-  # browser client (confirmed empirically, see nexquake/README.md).
-  # nexquake/Dockerfile instead builds NexQuake's own WinQuake-derived
-  # nqserver from source with our accounts/login/voting/admin patch
-  # (nexquake/server-patch/) layered on top, so accounts/voting/admin work
-  # the same way here as on quake-airquake. A separate server instance on
-  # its own port (see nexquake/game/servers.ini) -- but shares the SAME
-  # accounts.dat as quake-airquake (via the second volume + -accountsdir in
-  # servers.ini), so one account/admin bootstrap works from both native
-  # client and browser. Known limitation: if both services are written to
-  # at literally the same moment (e.g. two people registering within the
-  # same instant on different entry points), whichever save() lands second
-  # wins -- there's no cross-process locking. Low-stakes for a small friends
-  # server (worst case is a rare re-register), not attempted here.
+  # Game server for BOTH native and browser play (see the now-retired
+  # quake-airquake service above -- native clients connect directly to
+  # nqserver's published UDP port now instead). Built via NexQuake
+  # (https://github.com/0xBrsm/NexQuake, a WASM Quake client + Go relay
+  # that tunnels UDP over WebSocket for browser play) -- but NOT our
+  # QuakeSpasm build (vendor/quakespasm): that engine's wire format doesn't
+  # work with NexQuake's browser client (confirmed empirically, see
+  # nexquake/README.md), so nexquake/Dockerfile instead builds NexQuake's
+  # own WinQuake-derived nqserver from source with our accounts/login/
+  # voting/admin patch (nexquake/server-patch/) layered on top.
   #
   # Served on its own subdomain (play.airquake.eragon.io), not the main
   # domain root -- airquake-landing (below) owns that with a nickname-entry
@@ -69,21 +71,32 @@ services:
     image: airquake-nexquake
     container_name: airquake-nexquake
     restart: unless-stopped
-    # No host port published -- Traefik (already running on this host, see
-    # the labels below) is the sole ingress, terminating TLS and proxying
-    # in over traefik_web. Deliberately not setting EXTERNAL_URL/relying on
-    # Nexus's own ACME support: Traefik already owns 80/443 and the "le"
-    # resolver on this host, so this runs in NexQuake's documented
+    # HTTP/WS (browser play) has no host port published -- Traefik (see the
+    # labels below) is the sole ingress for that, terminating TLS and
+    # proxying in over traefik_web. Deliberately not setting EXTERNAL_URL/
+    # relying on Nexus's own ACME support: Traefik already owns 80/443 and
+    # the "le" resolver on this host, so this runs in NexQuake's documented
     # "behind a front" mode (plain HTTP/WS internally).
+    #
+    # nqserver's raw game port IS published directly, though -- it's plain
+    # NetQuake protocol 15, which native clients (QuakeSpasm, vkQuake, ...)
+    # can connect to as-is, not just the browser client via Nexus's tunnel.
+    # This makes nqserver the single shared server for both native and
+    # browser play (see the now-retired quake-airquake service above).
+    ports:
+      - "26001:26001/udp"
     networks:
       - traefik_web
     volumes:
       # game/id1/common + game/airquake/{common,client,server} -- see
       # nexquake/README.md for layout and how it was derived from game/.
       - /opt/airquake/nexquake-game:/app/game
-      # Shared account store with quake-airquake -- see -accountsdir in
-      # nexquake/game/servers.ini.
+      # Shared account store, also used by quake-airquake's one-shot
+      # -createadmin bootstrap -- see -accountsdir in nexquake/game/servers.ini.
       - /opt/airquake/airquake:/app/accounts
+      # Per-run session logs (nqserver writes a fresh timestamped directory
+      # under here on every start) -- read by quake-stats below.
+      - /opt/airquake/nexquake-logs:/app/logs
     environment:
       # Auto-connect on page load -- fine with exactly one server defined.
       - CL_ARGS=+connect

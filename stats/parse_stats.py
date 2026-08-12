@@ -13,6 +13,7 @@ Usage:
 """
 
 import re
+import glob
 import time
 import argparse
 import http.server
@@ -49,21 +50,31 @@ _SUICIDE_PATTERNS = [
 ]
 
 # Connect / disconnect
+# "Client X removed" is nqserver's (NexQuake's WinQuake-derived dedicated
+# server) own wording, from server-patch/host.c's SV_DropClient -- distinct
+# from quake-airquake/QuakeSpasm's "disconnected"/"left the game" phrasing.
 _CONNECT = re.compile(
     r'^(?:Client "(?P<a>.+?)" connected|(?P<b>.+?) entered the game|(?P<c>.+?) joined the game)$'
 )
 _DISCONNECT = re.compile(
-    r'^(?:Client "(?P<a>.+?)" disconnected|(?P<b>.+?) (?:has )?disconnected|(?P<c>.+?) left the game)$'
+    r'^(?:Client "(?P<a>.+?)" disconnected|(?P<b>.+?) (?:has )?disconnected|'
+    r'(?P<c>.+?) left the game|Client (?P<d>.+?) removed)$'
 )
 
-# Map changes  — NetQuake dedicated server format
+# Map changes — NetQuake dedicated server format, plus nqserver's own
+# "FindFile: ./<game>/maps/<name>.bsp" trace line (SV_SpawnServer's
+# Mod_ForName lookup), which fires on every map load including the initial
+# boot map, unlike the debug-only "SpawnServer: %s" print.
 _MAP_CHANGE = re.compile(
-    r"^(?:-{3,}\s*Spawned server (?P<a>\S+)|Changelevel to (?P<b>\S+)|MAP: (?P<c>\S+))$",
+    r"^(?:-{3,}\s*Spawned server (?P<a>\S+)|Changelevel to (?P<b>\S+)|MAP: (?P<c>\S+)|"
+    r"FindFile: \./\w+/maps/(?P<d>\S+?)\.bsp)$",
     re.IGNORECASE,
 )
 
-# Optional leading timestamp [HH:MM:SS] or HH:MM:SS
-_TIMESTAMP = re.compile(r"^\[?(\d{2}:\d{2}:\d{2})\]?\s*(.+)$")
+# Optional leading timestamp. quake-airquake/QuakeSpasm's -condebug format is
+# bare "[HH:MM:SS]"/"HH:MM:SS"; nqserver's own logger prefixes a full date
+# too ("2026/08/12 12:24:55 "). Only the time portion is kept for display.
+_TIMESTAMP = re.compile(r"^\[?(?:\d{4}/\d{2}/\d{2}\s+)?(\d{2}:\d{2}:\d{2})\]?\s*(.+)$")
 
 # Weapon inference — map kill message keywords to weapon names
 _WEAPON_KEYWORDS: list[tuple[str, list[str]]] = [
@@ -282,7 +293,7 @@ class LogParser:
                 # Map change
                 m = _MAP_CHANGE.match(line)
                 if m:
-                    map_name = m.group("a") or m.group("b") or m.group("c")
+                    map_name = m.group("a") or m.group("b") or m.group("c") or m.group("d")
                     self._start_match(map_name, ts)
                     continue
 
@@ -297,7 +308,7 @@ class LogParser:
                 # Disconnect
                 m = _DISCONNECT.match(line)
                 if m:
-                    player = _extract_name(m, "a", "b", "c")
+                    player = _extract_name(m, "a", "b", "c", "d")
                     if player:
                         self._on_disconnect(player, ts)
                     continue
@@ -668,11 +679,24 @@ class StatsHandler(http.server.BaseHTTPRequestHandler):
         pass
 
 
-def _refresh_loop(log_path: Path, interval: int) -> None:
+def _resolve_log_glob(pattern: str) -> Path:
+    # nqserver writes each run's log to a freshly timestamped directory
+    # (/app/logs/0-nqserver-<timestamp>/server.log) rather than one stable
+    # path -- re-resolve the glob to the most-recently-modified match every
+    # time, so a server restart's new session directory gets picked up
+    # automatically on the next refresh cycle.
+    matches = glob.glob(pattern)
+    if not matches:
+        raise FileNotFoundError(f"no log file matches glob: {pattern}")
+    return Path(max(matches, key=lambda p: Path(p).stat().st_mtime))
+
+
+def _refresh_loop(log_path_or_glob, interval: int) -> None:
     while True:
         parser = LogParser()
         try:
-            parser.parse(log_path)
+            path = _resolve_log_glob(log_path_or_glob) if isinstance(log_path_or_glob, str) else log_path_or_glob
+            parser.parse(path)
             StatsHandler.html = render_html(parser)
         except Exception as e:
             StatsHandler.html = f"<pre>Error parsing log: {e}</pre>"
@@ -683,7 +707,10 @@ def _refresh_loop(log_path: Path, interval: int) -> None:
 
 def main():
     ap = argparse.ArgumentParser(description="Airquake stats parser")
-    ap.add_argument("--log",      required=True, help="Path to qconsole.log")
+    ap.add_argument("--log", help="Path to a fixed log file (e.g. quake-airquake's qconsole.log)")
+    ap.add_argument("--log-glob", help="Glob pattern to the log file, re-resolved to the most "
+                                       "recently modified match on every refresh (e.g. nqserver's "
+                                       "per-session /logs/*/server.log)")
     ap.add_argument("--output",   default="stats.html", help="Output HTML file (default: stats.html)")
     ap.add_argument("--serve",    action="store_true", help="Serve stats over HTTP instead of writing a file")
     ap.add_argument("--port",     type=int, default=8080, help="HTTP port (default: 8080)")
@@ -692,10 +719,19 @@ def main():
     ap.add_argument("--hostname", default="the server", help="Server name used in the welcome message")
     args = ap.parse_args()
 
-    log_path = Path(args.log)
-    if not log_path.exists():
-        print(f"Log file not found: {log_path}")
+    if not args.log and not args.log_glob:
+        print("Must pass either --log or --log-glob")
         raise SystemExit(1)
+
+    if args.log_glob:
+        log_path = _resolve_log_glob(args.log_glob)
+        log_source = args.log_glob  # re-resolved fresh on every refresh
+    else:
+        log_path = Path(args.log)
+        if not log_path.exists():
+            print(f"Log file not found: {log_path}")
+            raise SystemExit(1)
+        log_source = log_path  # fixed path, resolved once
 
     if args.serve:
         print(f"Starting stats server on http://0.0.0.0:{args.port}  (refreshing every {args.interval}s)")
@@ -704,7 +740,7 @@ def main():
         parser.parse(log_path)
         StatsHandler.html = render_html(parser)
         # Background refresh loop
-        t = threading.Thread(target=_refresh_loop, args=(log_path, args.interval), daemon=True)
+        t = threading.Thread(target=_refresh_loop, args=(log_source, args.interval), daemon=True)
         t.start()
         if args.fifo:
             print(f"Watching for joins to greet via {args.fifo}")
