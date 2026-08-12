@@ -60,6 +60,28 @@ for f in $CFG_FILES; do
     mv "$match" "$DST/airquake/server/$base"
   fi
 done
+
+# NexQuake's own bundled default client config (modern WASD-style, seeded
+# separately into the browser client, not something this mod ships) binds
+# several keys the mod's own AUTOEXEC.CFG doesn't touch -- space/shift/f/
+# mouse wheel, plus an always-on auto-run toggle. The native/server side
+# never has any of that active, so without unwinding it here the browser's
+# *effective* keymap silently diverges from the server default even though
+# client/AUTOEXEC.CFG's own bind lines are identical to the server's (same
+# source file, copied above). Appended here (not hand-edited into the
+# client copy directly) since this whole client/ directory gets rebuilt
+# from scratch on every run.
+autoexec_client=$(find "$DST/airquake/client" -maxdepth 1 -iname "AUTOEXEC.CFG" | head -n1)
+if [ -n "$autoexec_client" ]; then
+  cat >>"$autoexec_client" <<'EOF'
+unbind "SPACE"
+unbind "SHIFT"
+unbind "f"
+unbind "MWHEELUP"
+unbind "MWHEELDOWN"
+-speed
+EOF
+fi
 match=$(find "$DST/airquake/common" -maxdepth 1 -iname "server.cfg" | head -n1)
 if [ -n "$match" ]; then
   mv "$match" "$DST/airquake/server/server.cfg"

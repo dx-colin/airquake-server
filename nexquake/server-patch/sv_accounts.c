@@ -674,9 +674,23 @@ void SV_Accounts_CastVote (struct client_s *cl, const char *mapname)
 		char cmd[96];
 		SV_BroadcastPrintf ("Vote passed! Changing map to %s...\n", ve->mapname);
 		snprintf (cmd, sizeof (cmd), "changelevel %s\n", ve->mapname);
+		// Queue only -- do NOT Cbuf_Execute() here. This function runs from
+		// inside SV_ReadClientMessage's packet-parsing loop (Host_Vote_f ->
+		// here, dispatched via Cmd_ExecuteString for the voting client's own
+		// clc_stringcmd), which is still mid-read on that client's incoming
+		// packet. Forcing changelevel to run synchronously right here means
+		// SV_SpawnServer resets all server/client state out from under that
+		// still-in-progress packet read, and the next byte it reads is
+		// garbage -- confirmed live: every vote crashed the whole nqserver
+		// process (not just that one client) with "SV_ReadClientMessage:
+		// unknown command char" followed by silence, right at the
+		// changelevel. Host_Frame already calls Cbuf_Execute() once per
+		// frame, before SV_RunClients() processes any client packets (see
+		// host.c's _Host_Frame) -- that's naturally the safe point for this
+		// to actually run, and queuing (not forcing) lets it land there.
 		Cbuf_AddText (cmd);
-		Cbuf_Execute ();
-		// SV_SpawnServer (triggered by the changelevel above) calls
-		// SV_Accounts_ResetVotes itself, so no explicit reset here.
+		// SV_SpawnServer (triggered by the queued changelevel above, next
+		// frame) calls SV_Accounts_ResetVotes itself, so no explicit reset
+		// here.
 	}
 }

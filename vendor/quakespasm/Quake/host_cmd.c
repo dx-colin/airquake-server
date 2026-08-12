@@ -1592,10 +1592,12 @@ Host_Admin_f
 admin <fraglimit|timelimit|hostname|teamplay|map|changelevel|kick> [args...]
 
 Gated on the caller's account having is_admin set. Whitelisted subcommands
-are forwarded verbatim as a fully-trusted console command via Cbuf_AddText +
-Cbuf_Execute -- the exact mechanism Cbuf_Execute already uses for every
-command typed at the server's own console/FIFO (always src_command), so
-this reuses that trust path rather than reimplementing each rule change.
+are forwarded verbatim as a fully-trusted console command via Cbuf_AddText,
+queued for Host_Frame's own once-per-frame Cbuf_Execute() rather than
+forced immediately (see the Cbuf_AddText call below for why) -- this still
+reuses the src_command trust path every server-console/FIFO command goes
+through, just deferred by a frame instead of reimplementing each rule
+change inline.
 ==================
 */
 static const char *sv_admin_allowed_cmds[] =
@@ -1651,9 +1653,16 @@ static void Host_Admin_f (void)
 	}
 
 	SV_BroadcastPrintf ("[admin] %s: %s\n", host_client->account_name, cmdline);
+	// Queue only -- do NOT Cbuf_Execute() here. Same reentrancy hazard as
+	// SV_Accounts_CastVote's vote-passed changelevel (see its comment for
+	// the full story): this function runs from inside the admin's own
+	// clc_stringcmd packet read, and "map"/"changelevel" trigger
+	// SV_SpawnServer, which resets server/client state out from under that
+	// still-in-progress read and crashes the whole process. Host_Frame's
+	// once-per-frame Cbuf_Execute() (before client packets get processed)
+	// is the safe point for this to actually run.
 	Cbuf_AddText (cmdline);
 	Cbuf_AddText ("\n");
-	Cbuf_Execute ();
 }
 
 /*
