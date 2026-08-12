@@ -26,33 +26,62 @@ CFG_FILES="AUTOEXEC.CFG QUAKE.RC AIRSAY.RC AQALIAS.CFG CONFIG.CFG MAP00.CFG MAP0
 rm -rf "$DST/id1" "$DST/airquake/common" "$DST/airquake/client" "$DST/airquake/server"
 mkdir -p "$DST/id1/common" "$DST/airquake/common" "$DST/airquake/client" "$DST/airquake/server"
 
-cp "$SRC/id1/PAK0.PAK" "$SRC/id1/PAK1.PAK" "$DST/id1/common/"
+# Case-insensitive lookups throughout: this repo is developed on a
+# case-insensitive filesystem (Windows) but deployed on Linux, and the
+# actual on-disk casing of these files has already been observed to differ
+# between the two (e.g. pak0.pak vs PAK0.PAK) -- never assume a fixed case.
+# -L: game/id1 and game/airquake are themselves often symlinks (e.g. into
+# /opt/airquake on a real deployment host) -- without it, find refuses to
+# descend into a symlinked starting point at all on some find builds.
+for name in PAK0.PAK PAK1.PAK; do
+  match=$(find -L "$SRC/id1" -maxdepth 1 -iname "$name" | head -n1)
+  if [ -n "$match" ]; then
+    cp "$match" "$DST/id1/common/$(basename "$match")"
+  else
+    echo "prepare-game-data: warning: $name not found in $SRC/id1" >&2
+  fi
+done
 
 rsync -a --exclude=console.fifo --exclude=qconsole.log --exclude=accounts.dat \
     "$SRC/airquake/" "$DST/airquake/common/"
 
 for f in $CFG_FILES; do
-  if [ -f "$DST/airquake/common/$f" ]; then
-    cp "$DST/airquake/common/$f" "$DST/airquake/client/$f"
-    mv "$DST/airquake/common/$f" "$DST/airquake/server/$f"
+  match=$(find "$DST/airquake/common" -maxdepth 1 -iname "$f" | head -n1)
+  if [ -n "$match" ]; then
+    base=$(basename "$match")
+    cp "$match" "$DST/airquake/client/$base"
+    mv "$match" "$DST/airquake/server/$base"
   fi
 done
-mv "$DST/airquake/common/server.cfg" "$DST/airquake/server/server.cfg"
+match=$(find "$DST/airquake/common" -maxdepth 1 -iname "server.cfg" | head -n1)
+if [ -n "$match" ]; then
+  mv "$match" "$DST/airquake/server/server.cfg"
+else
+  echo "prepare-game-data: warning: server.cfg not found in $SRC/airquake" >&2
+fi
 
-# The archive's actual BSPs sit loose at the top level (its MAPS/
-# subdirectory is empty) but quakespasm always looks for "maps/<name>.bsp"
-# (see sv_main.c: q_snprintf(sv.modelname, ..., "maps/%s.bsp", server)) --
-# without this, +map/vote requests for these maps fail with "Couldn't spawn
-# server maps/<name>.bsp" and silently fall back to id1's stock map.
+# quakespasm always looks for "maps/<name>.bsp" (see sv_main.c:
+# q_snprintf(sv.modelname, ..., "maps/%s.bsp", server)) -- without an
+# actual lowercase maps/ subdirectory, +map/vote requests fail with
+# "Couldn't spawn server maps/<name>.bsp" and silently fall back to id1's
+# stock map. Search recursively (not just top-level) since this archive's
+# BSPs have been observed sitting loose at the top level on one copy of
+# this data and properly inside a real MAPS/ subdirectory on another --
+# don't assume either layout. The source archive is also known to carry a
+# pre-existing "maps" -> "MAPS" symlink alias (from entrypoint.sh's
+# case-folding workaround, already applied to some deployments) -- rsync
+# would have copied that symlink verbatim, so start this directory fresh
+# rather than inheriting it (copying a real file onto a path that's a
+# symlink back to itself fails with "are the same file").
+rm -rf "$DST/airquake/common/maps"
 mkdir -p "$DST/airquake/common/maps"
 for name in $AIRQUAKE_MAPS; do
-  match=$(find "$DST/airquake/common" -maxdepth 1 -iname "${name}.bsp" | head -n1)
+  match=$(find "$DST/airquake/common" -iname "${name}.bsp" -type f | head -n1)
   if [ -n "$match" ]; then
     cp "$match" "$DST/airquake/common/maps/$(basename "$match")"
   else
     echo "prepare-game-data: warning: $name.bsp not found in $SRC/airquake" >&2
   fi
 done
-rmdir "$DST/airquake/common/MAPS" 2>/dev/null || true
 
 echo "Done. $DST/id1 and $DST/airquake are ready for the nexquake service."

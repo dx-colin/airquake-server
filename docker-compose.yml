@@ -53,6 +53,13 @@ services:
   # same instant on different entry points), whichever save() lands second
   # wins -- there's no cross-process locking. Low-stakes for a small friends
   # server (worst case is a rare re-register), not attempted here.
+  #
+  # Served at /play/, not the domain root -- airquake-landing (below) owns
+  # the root path with a nickname-entry page. The client's own asset
+  # references (index.js, shell.css, etc.) are all relative, so it works
+  # fine off a subpath; airquake-strip-play (below) removes the /play
+  # prefix before the request reaches Nexus, which has no idea it's not at
+  # root.
   nexquake:
     build:
       context: .
@@ -78,22 +85,51 @@ services:
     environment:
       # Auto-connect on page load -- fine with exactly one server defined.
       - CL_ARGS=+connect
+      # Lets airquake-landing's ?+name&<nick> query string add a +name
+      # token on top of CL_ARGS above, so the nickname typed on the landing
+      # page becomes the player's in-game name instead of everyone sharing
+      # the engine default.
+      - CL_URL_ARGS=1
       # Traefik forwards the real client IP in this header -- without it,
       # source-IP bans/logging would target Traefik's own container IP.
       - AUTH_CLIENT_IP_HEADER=X-Forwarded-For
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik_web
-      - traefik.http.routers.airquake.rule=Host(`airquake.eragon.io`)
-      - traefik.http.routers.airquake.entrypoints=websecure
-      - traefik.http.routers.airquake.tls.certresolver=le
-      - traefik.http.services.airquake.loadbalancer.server.port=1337
+      - traefik.http.routers.airquake-game.rule=Host(`airquake.eragon.io`) && PathPrefix(`/play`)
+      - traefik.http.routers.airquake-game.priority=10
+      - traefik.http.routers.airquake-game.entrypoints=websecure
+      - traefik.http.routers.airquake-game.tls.certresolver=le
+      - traefik.http.routers.airquake-game.middlewares=airquake-strip-play@docker
+      - traefik.http.middlewares.airquake-strip-play.stripprefix.prefixes=/play
+      - traefik.http.services.airquake-game.loadbalancer.server.port=1337
     healthcheck:
       test: ["CMD", "/app/bin/nexus", "healthcheck"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  # Nickname-entry landing page at the domain root -- see
+  # nexquake/landing/index.html. Redirects into nexquake (above) at /play/
+  # with a ?+name&<nick> query string, which CL_URL_ARGS on nexquake turns
+  # into the player's in-game name. Plain static file, no build step.
+  airquake-landing:
+    image: nginx:alpine
+    container_name: airquake-landing
+    restart: unless-stopped
+    networks:
+      - traefik_web
+    volumes:
+      - ./nexquake/landing/index.html:/usr/share/nginx/html/index.html:ro
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik_web
+      - traefik.http.routers.airquake-landing.rule=Host(`airquake.eragon.io`)
+      - traefik.http.routers.airquake-landing.priority=1
+      - traefik.http.routers.airquake-landing.entrypoints=websecure
+      - traefik.http.routers.airquake-landing.tls.certresolver=le
+      - traefik.http.services.airquake-landing.loadbalancer.server.port=80
 
 networks:
   traefik_web:

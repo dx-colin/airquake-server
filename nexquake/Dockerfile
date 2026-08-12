@@ -33,7 +33,10 @@ COPY nexquake/vendor/NexQuake/server server/
 
 # Fetches upstream WinQuake and applies NexQuake's own bugfix + server
 # patches -- the exact same tree their bundled nqserver is built from.
-RUN OUT_DIR=build/tmp/server ./build/prepare-upstream.sh server
+# Invoked via `bash` rather than `./...` -- the executable bit doesn't
+# reliably survive git archive -> scp -> COPY on every path this build gets
+# run from (e.g. a Windows dev machine), so don't depend on it.
+RUN OUT_DIR=build/tmp/server bash build/prepare-upstream.sh server
 
 # Our patch overlays on top of their prepared tree: new sv_accounts.c/.h,
 # and our modified server.h/host.c/host_cmd.c/pr_cmds.c/sv_main.c/

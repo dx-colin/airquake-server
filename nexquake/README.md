@@ -26,19 +26,47 @@ It shares the **same `accounts.dat`** as `quake-airquake` (see
 (`AIRQUAKE_ADMIN_USER`/`PASS` on the `quake-airquake` service) works from
 both native client and browser.
 
+The domain root is a small nickname-entry page (`landing/index.html`,
+served by the `airquake-landing` service), not the game itself — see
+"Nickname entry" below for why and how it's wired up.
+
 ## Setup
 
 1. Run `./nexquake/prepare-game-data.sh` (needs `rsync`) to build
    `nexquake/game/` from your already-populated `../game/` directory.
    Idempotent — safe to re-run after updating PAK files or mod configs.
-2. `docker compose up -d nexquake` (or just `docker compose up -d` for
-   everything).
-3. Open `http://<your-server-ip>:1337`.
+2. `docker compose up -d nexquake airquake-landing` (or just
+   `docker compose up -d` for everything).
+3. Open `http://<your-server-ip>/` (through Traefik) — or
+   `http://<your-server-ip>:1337/play/` to hit the game directly, bypassing
+   the landing page and Traefik.
 4. In-game, press **`~`** (tilde/backtick) to open the real console (not
    chat/`say` — text typed there is public and won't reach `register`/
    `login`/etc). Browser backtick-key handling is occasionally flaky
    depending on browser/keyboard layout; click into the game window first
    if it doesn't respond.
+
+## Nickname entry
+
+NexQuake's client is the standard Quake UI (Setup menu / console `name`
+command) — there's no web-native nickname box, and `CL_ARGS=+connect`
+(auto-connect on load) means players never even see that menu. So instead:
+`airquake-landing` serves a tiny static page (`landing/index.html`) at the
+domain root with a nickname field. Submitting it redirects to
+`/play/?+name&<nickname>`, which `nexquake`'s `CL_URL_ARGS=1` turns into an
+extra `+name <nickname>` client startup arg on top of `CL_ARGS`, so the
+player connects with that name already set.
+
+`nexquake` itself is *not* at the domain root — it's routed at `/play`
+(`airquake-strip-play` middleware strips that prefix before the request
+reaches Nexus, which never knows it's not at root). This only works
+because the client's own asset references (`index.js`, `shell.css`, etc.)
+are all relative paths, not absolute -- confirmed by inspecting the served
+HTML before relying on it. `airquake-landing` and `nexquake` are separate
+Traefik routers on the same `Host` rule, split by path
+(`airquake-landing` priority 1 catches everything else, `airquake-game`
+priority 10 catches `/play*`) — both reuse the same Let's Encrypt
+certificate, no extra DNS record needed.
 
 ## Important: keep this private
 
@@ -73,18 +101,21 @@ in case any of it needs revisiting later:
   (see `sv_accounts.c`'s `g_accounts_dir`) that overrides where
   `accounts.dat` lives, pointed at a real bind-mounted path instead.
 - **`maps/` subdirectory.** This engine always looks for `maps/<name>.bsp`.
-  AirQuake's archive has its BSPs sitting loose at the top level — the
-  archive's own `MAPS/` folder is empty — which works for the main
-  QuakeSpasm-based service today only because nobody had actually
-  exercised the random-map-select path successfully (see the note left in
-  `../entrypoint.sh` — this is a pre-existing gap there too, not something
-  new to this integration). `prepare-game-data.sh` copies the whitelisted
-  maps into an actual `common/maps/` directory to fix this.
+  On the local Windows dev copy used while building this integration, the
+  archive's own `MAPS/` folder was empty (BSPs sat loose at the top level)
+  — `prepare-game-data.sh` copies the whitelisted maps into an actual
+  `common/maps/` directory to handle that layout. This turned out to be
+  specific to that one local copy, not a real production data issue — the
+  actual production `/opt/airquake/airquake/MAPS/` archive was already
+  properly populated, so the main QuakeSpasm-based service was never
+  actually affected by this.
 - **Hostname/map defaults.** `servers.ini`'s `@def` line runs `+exec
   server.cfg` before `+hostname` (so our hostname wins over server.cfg's)
-  and forces `+map airdmd1` explicitly (without it, the server falls back
-  to id1's stock `start` map, which isn't built for the mod). Players can
-  `/vote` a different map once connected.
+  and forces `+map airw1` explicitly (without it, the server falls back to
+  id1's stock `start` map, which isn't built for the mod). Players can
+  `/vote` a different map once connected. `../entrypoint.sh` does the same
+  for the native service (`DEFAULT_MAP`) — both are fixed to the same
+  starting map, not randomized.
 - **Idle mapcycle landing on a non-AirQuake map.** NexQuake's own
   `host.c.patch` force-changes the map after `(timelimit + 1)` idle
   minutes with nobody connected. With their `mapcycle` cvar unset, that
@@ -103,6 +134,8 @@ nexquake/
   Dockerfile               Multi-stage build: NexQuake's nqserver (from source,
                             our patch overlaid) + NexQuake's published nexus/wasm artifacts
   prepare-game-data.sh      Rebuilds game/ below from ../game/ (gitignored, proprietary data)
+  landing/index.html        Nickname-entry page served at the domain root (airquake-landing
+                            service) -- see "Nickname entry" above
   server-patch/             Full-file overlay applied after NexQuake's own server patches:
                             sv_accounts.c/.h (new), server.h/host.c/host_cmd.c/pr_cmds.c/
                             sys_linux.c (modified), Makefile.dedicated (adds sv_accounts.o, -lcrypt)

@@ -33,26 +33,20 @@ done
 # folder also has ~20 generic vanilla-Quake DM maps mixed into maps/ that
 # happen to carry no vehicle spawn entities, plus airfox2c.bsp which is
 # actually a Quake II AirQuake2 map. Loading any of those breaks spawning.
-# Only randomize across maps confirmed (via their .txt readmes) to require/
-# support AirQuake TC for Quake 1.
 #
-# This list is also mirrored into game/airquake/server.cfg's
-# sv_votable_maps cvar, which the engine uses to validate /vote requests --
-# the two are kept in sync manually since one lives in shell and the other
-# in a cvar the engine reads at runtime. Update both if this list changes.
-AIRQUAKE_MAPS="airdmd1 airdmd2 airfox airmine airw1 bjair1"
+# DEFAULT_MAP must be one of the maps confirmed (via their .txt readmes) to
+# require/support AirQuake TC for Quake 1, and must match one of
+# game/airquake/server.cfg's sv_votable_maps entries, which the engine uses
+# to validate /vote requests -- the two are kept in sync manually since one
+# lives in shell and the other in a cvar the engine reads at runtime.
+DEFAULT_MAP="airw1"
 
 MAPS_DIR=$(find "$GAMEDIR" -maxdepth 1 -iname maps -type d | head -n1)
-CANDIDATES=""
+START_MAP=""
 if [ -n "$MAPS_DIR" ]; then
-    for name in $AIRQUAKE_MAPS; do
-        match=$(find "$MAPS_DIR" -maxdepth 1 -iname "${name}.bsp" -size +0c | head -n1)
-        [ -n "$match" ] && CANDIDATES="$CANDIDATES$name
-"
-    done
+    match=$(find "$MAPS_DIR" -maxdepth 1 -iname "${DEFAULT_MAP}.bsp" -size +0c | head -n1)
+    [ -n "$match" ] && START_MAP="$DEFAULT_MAP"
 fi
-
-RANDOM_MAP=$(printf '%s' "$CANDIDATES" | sed '/^$/d' | shuf -n 1)
 
 # This engine has no rcon (that's a QuakeWorld-only feature; vanilla NetQuake
 # never implemented it -- confirmed absent from the binary). The only way to
@@ -81,10 +75,10 @@ if [ -n "$AIRQUAKE_ADMIN_USER" ] && [ -n "$AIRQUAKE_ADMIN_PASS" ]; then
         || echo "entrypoint: admin bootstrap failed, continuing without it"
 fi
 
-if [ -n "$RANDOM_MAP" ]; then
-    echo "entrypoint: starting on random map '$RANDOM_MAP'"
-    exec /usr/games/quakespasm "$@" +map "$RANDOM_MAP" 0<&3
+if [ -n "$START_MAP" ]; then
+    echo "entrypoint: starting on map '$START_MAP'"
+    exec /usr/games/quakespasm "$@" +map "$START_MAP" 0<&3
 else
-    echo "entrypoint: no AirQuake-compatible maps found under $MAPS_DIR, falling back to configured default"
+    echo "entrypoint: default map '$DEFAULT_MAP' not found under $MAPS_DIR, falling back to configured default"
     exec /usr/games/quakespasm "$@" 0<&3
 fi

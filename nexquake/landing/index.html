@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<title>AirQuake</title>
+<link rel="icon" href="data:,">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%; margin: 0;
+    background: #0a0a0a; color: #eee;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  body {
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  main {
+    width: 100%; max-width: 360px;
+    text-align: center;
+  }
+  h1 {
+    margin: 0 0 4px;
+    font-size: 2rem;
+    letter-spacing: 0.05em;
+  }
+  h1 .air { color: #E76C0E; }
+  p.sub {
+    margin: 0 0 28px;
+    color: #999;
+    font-size: 0.9rem;
+  }
+  input[type=text] {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 1rem;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: #eee;
+    outline: none;
+  }
+  input[type=text]:focus { border-color: #E76C0E; }
+  button {
+    width: 100%;
+    margin-top: 14px;
+    padding: 12px 14px;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    background: #E76C0E;
+    color: #0a0a0a;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  button:active { background: #c65c0b; }
+  p.hint {
+    margin-top: 16px;
+    font-size: 0.8rem;
+    color: #666;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1><span class="air">Air</span>Quake</h1>
+  <p class="sub">Enter a nickname to join</p>
+  <form id="join-form" autocomplete="off">
+    <input id="nickname" type="text" maxlength="20" placeholder="Nickname" autofocus required>
+    <button type="submit">Play</button>
+  </form>
+  <p class="hint">Use the in-game console (~) to register/login and track stats.</p>
+</main>
+<script>
+(function () {
+  var input = document.getElementById('nickname');
+  var saved = localStorage.getItem('airquake-nickname');
+  if (saved) input.value = saved;
+
+  document.getElementById('join-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    // Quake's "name" cvar is set via a plain console token -- strip quotes/
+    // semicolons so a nickname can't break out of that (e.g. inject another
+    // command), and trim to keep it sane on-screen.
+    var nick = input.value.trim().replace(/[";]/g, '').slice(0, 20);
+    if (!nick) return;
+    localStorage.setItem('airquake-nickname', nick);
+    location.href = '/play/?+name&' + encodeURIComponent(nick);
+  });
+})();
+</script>
+</body>
+</html>
