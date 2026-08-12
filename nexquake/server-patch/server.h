@@ -118,6 +118,13 @@ typedef struct client_s
 	char			account_name[32];
 	double			session_start;		// Sys_FloatTime() at login, for playtime accrual
 	qboolean		voted_this_round;	// map vote, reset by SV_Accounts_ResetVotes
+// live management dashboard -- see SV_Accounts_DumpLiveStatus in
+// sv_accounts.c. Deliberately separate from account_t's persistent
+// kills/deaths (those only accrue for authenticated players); these count
+// every frag this connection, logged in or not, reset on map change so the
+// dashboard shows "this match" rather than a running total.
+	int			session_kills;
+	int			session_deaths;
 } client_t;
 
 

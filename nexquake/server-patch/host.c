@@ -737,6 +737,12 @@ void _Host_Frame (float time)
 // process console commands
 	Cbuf_Execute ();
 
+// quake-manage's live dashboard -- see sv_accounts.c's "live management
+// dashboard" section. Not inside any client's packet read here, so this is
+// exactly the safe point the vote/admin reentrancy fix above relies on.
+	SV_Accounts_ProcessPendingCommand ();
+	SV_Accounts_DumpLiveStatus ();
+
 	NET_Poll();
 
 // if running the server locally, make intentions now

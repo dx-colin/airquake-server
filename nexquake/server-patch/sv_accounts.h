@@ -72,4 +72,16 @@ void SV_Accounts_ObserveBroadcast (const char *text);
 void SV_Accounts_ResetVotes (void);
 void SV_Accounts_CastVote (struct client_s *cl, const char *mapname);
 
+// Live management dashboard (quake-manage, a separate service reading/
+// writing files in the same accounts directory -- see sv_accounts.c's
+// "live management dashboard" section for why this is file-based).
+// Throttled internally to roughly once every 2 seconds; cheap to call
+// every frame.
+void SV_Accounts_DumpLiveStatus (void);
+// Runs (queues, via Cbuf_AddText) a command quake-manage dropped in
+// admin_command.txt, if any, then deletes the file. Call once per frame
+// from a point that isn't inside a client's packet read (see host.c's
+// _Host_Frame) -- same reentrancy concern as the vote-passed changelevel.
+void SV_Accounts_ProcessPendingCommand (void);
+
 #endif	/* _SV_ACCOUNTS_H_ */

@@ -520,25 +520,33 @@ static void _SV_Accounts_CreditKill (const char *killer_name, const char *victim
 	if (killer_name && killer_name[0] && strcmp (killer_name, victim_name) != 0)
 	{
 		kc = _SV_Accounts_FindClientByName (killer_name);
-		if (kc && kc->authenticated)
+		if (kc)
 		{
-			ka = _SV_Accounts_Find (kc->account_name);
-			if (ka)
+			kc->session_kills++;	// live dashboard -- every frag, not just authenticated
+			if (kc->authenticated)
 			{
-				ka->kills++;
-				dirty = true;
+				ka = _SV_Accounts_Find (kc->account_name);
+				if (ka)
+				{
+					ka->kills++;
+					dirty = true;
+				}
 			}
 		}
 	}
 
 	vc = _SV_Accounts_FindClientByName (victim_name);
-	if (vc && vc->authenticated)
+	if (vc)
 	{
-		va = _SV_Accounts_Find (vc->account_name);
-		if (va)
+		vc->session_deaths++;
+		if (vc->authenticated)
 		{
-			va->deaths++;
-			dirty = true;
+			va = _SV_Accounts_Find (vc->account_name);
+			if (va)
+			{
+				va->deaths++;
+				dirty = true;
+			}
 		}
 	}
 
@@ -619,7 +627,14 @@ void SV_Accounts_ResetVotes (void)
 
 	g_vote_num_candidates = 0;
 	for (i = 0; i < svs.maxclients; i++)
+	{
 		svs.clients[i].voted_this_round = false;
+		// Live dashboard's "this match" frag counts -- called from
+		// SV_SpawnServer on every map change (see its doc comment), the
+		// same natural reset point as votes.
+		svs.clients[i].session_kills = 0;
+		svs.clients[i].session_deaths = 0;
+	}
 }
 
 void SV_Accounts_CastVote (struct client_s *cl, const char *mapname)
@@ -693,4 +708,134 @@ void SV_Accounts_CastVote (struct client_s *cl, const char *mapname)
 		// frame) calls SV_Accounts_ResetVotes itself, so no explicit reset
 		// here.
 	}
+}
+
+// ── live management dashboard ───────────────────────────────────────────
+//
+// Writes an on-disk snapshot (map, rules, connected players) for the
+// external quake-manage web dashboard to read, and reads back a plain-text
+// command file it may have dropped for us to run. Both live in the same
+// accounts directory (already a shared, writable volume -- see
+// SV_Accounts_SetDir), so this needs no new mount, port, or protocol of
+// its own. Deliberately file-based rather than e.g. exposing an HTTP
+// endpoint from inside this engine: the account/command patterns already
+// here (atomic write via .tmp+rename, Cbuf_AddText queued for next frame
+// rather than forced) are exactly what's needed and already proven, so
+// this reuses them instead of adding a new I/O stack to a 1996 codebase
+// that never had one.
+
+static void _SV_JsonEscape (const char *in, char *out, size_t outsize)
+{
+	size_t oi = 0;
+	unsigned char c;
+
+	if (!in)
+		in = "";
+	for (; *in && oi + 2 < outsize; in++)
+	{
+		c = (unsigned char)*in;
+		if (c == '"' || c == '\\')
+		{
+			if (oi + 3 >= outsize)
+				break;
+			out[oi++] = '\\';
+			out[oi++] = (char)c;
+		}
+		else if (c < 0x20)
+			continue;	// strip control chars (e.g. from a hostile "name") rather than \u-escape
+		else
+			out[oi++] = (char)c;
+	}
+	out[oi] = 0;
+}
+
+void SV_Accounts_DumpLiveStatus (void)
+{
+	char		path[MAX_OSPATH], tmppath[MAX_OSPATH];
+	char		esc[128];
+	FILE		*f;
+	int		i;
+	qboolean	first = true;
+	static double	last_dump = 0;
+	double		now = Sys_FloatTime ();
+
+	if (!g_accounts_initialized)
+		return;
+	if (now - last_dump < 2.0)	// throttle -- no need for per-frame disk I/O
+		return;
+	last_dump = now;
+
+	snprintf (tmppath, sizeof (tmppath), "%s/live_status.json.tmp", _SV_Accounts_Dir ());
+	f = fopen (tmppath, "w");
+	if (!f)
+		return;	// non-fatal -- dashboard just shows a stale snapshot
+
+	_SV_JsonEscape (sv.active ? sv.name : "", esc, sizeof (esc));
+	fprintf (f, "{\"map\":\"%s\",", esc);
+	_SV_JsonEscape (hostname.string, esc, sizeof (esc));
+	fprintf (f, "\"hostname\":\"%s\",", esc);
+	fprintf (f, "\"fraglimit\":%d,\"timelimit\":%d,\"updated\":%ld,\"players\":[",
+		(int)fraglimit.value, (int)timelimit.value, (long)time (NULL));
+
+	for (i = 0; i < svs.maxclients; i++)
+	{
+		client_t *cl = &svs.clients[i];
+		if (!cl->active)
+			continue;
+
+		if (!first)
+			fputc (',', f);
+		first = false;
+
+		fputc ('{', f);
+		_SV_JsonEscape (cl->name, esc, sizeof (esc));
+		fprintf (f, "\"name\":\"%s\",", esc);
+		_SV_JsonEscape (cl->netconnection ? cl->netconnection->address : "", esc, sizeof (esc));
+		fprintf (f, "\"address\":\"%s\",", esc);
+		fprintf (f, "\"spawned\":%s,", cl->spawned ? "true" : "false");
+		fprintf (f, "\"authenticated\":%s,", cl->authenticated ? "true" : "false");
+		_SV_JsonEscape (cl->authenticated ? cl->account_name : "", esc, sizeof (esc));
+		fprintf (f, "\"account\":\"%s\",", esc);
+		fprintf (f, "\"is_admin\":%s,", cl->is_admin ? "true" : "false");
+		fprintf (f, "\"kills\":%d,\"deaths\":%d}", cl->session_kills, cl->session_deaths);
+	}
+
+	fprintf (f, "]}\n");
+	fflush (f);
+	fclose (f);
+
+	snprintf (path, sizeof (path), "%s/live_status.json", _SV_Accounts_Dir ());
+	rename (tmppath, path);	// atomic -- dashboard never sees a half-written file
+}
+
+void SV_Accounts_ProcessPendingCommand (void)
+{
+	char	path[MAX_OSPATH];
+	char	cmd[256];
+	FILE	*f;
+	size_t	len;
+
+	if (!g_accounts_initialized)
+		return;
+
+	snprintf (path, sizeof (path), "%s/admin_command.txt", _SV_Accounts_Dir ());
+	f = fopen (path, "r");
+	if (!f)
+		return;	// nothing pending -- the common case, checked every frame
+
+	len = fread (cmd, 1, sizeof (cmd) - 1, f);
+	fclose (f);
+	unlink (path);	// consume it -- never re-run the same command twice
+
+	if (len == 0)
+		return;
+	cmd[len] = 0;
+
+	// This runs from Host_Frame's own Cbuf_Execute() (see the call site in
+	// host.c), the same safe once-per-frame point the vote/admin fix above
+	// relies on -- never called from inside a client's packet read, so
+	// Cbuf_AddText is enough; no reentrancy hazard here to defer around.
+	Con_Printf ("quake-manage: running queued command: %s\n", cmd);
+	Cbuf_AddText (cmd);
+	Cbuf_AddText ("\n");
 }
