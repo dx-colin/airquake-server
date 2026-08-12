@@ -11,10 +11,17 @@ cd "$(dirname "$0")/.."
 SRC=game
 DST=nexquake/game
 
-# Must match entrypoint.sh's AIRQUAKE_MAPS -- see that file's comment for
-# why only these maps are safe to load (the rest of the archive is generic
-# vanilla-Quake DM maps and one Quake II map that break AirQuake spawning).
-AIRQUAKE_MAPS="airdmd1 airdmd2 airfox airmine airw1 bjair1"
+# Must match ../game/airquake/server.cfg's sv_votable_maps and
+# nexquake/game/airquake/server/server.cfg's sv_votable_maps/mapcycle --
+# all three are the set of maps actually confirmed to load under this
+# engine and support the AirQuake total conversion (empirically verified by
+# spinning up each map's .bsp and checking for load errors, not just
+# trusting map readmes -- the rest of the source archive is either generic
+# vanilla-Quake DM maps, or maps for "AirQuake2", an unrelated Quake II mod
+# that happened to ship in the same archive despite AirQuake-sounding
+# names/readmes -- those fail outright with a BSP-version error under this
+# engine). Update all three if this list changes.
+AIRQUAKE_MAPS="airdmd1 airdmd2 airfox airmine airw1 bjair1 belgrade canyon flight57 gb1 ground1 seastrik train1 train2"
 
 # Config/rc files the dedicated server ALSO execs (Host_Init runs
 # autoexec.cfg for -dedicated too, not just interactive clients), so they

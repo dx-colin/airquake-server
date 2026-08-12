@@ -29,13 +29,16 @@ find "$GAMEDIR" -mindepth 1 -depth 2>/dev/null | while IFS= read -r path; do
 done
 
 # AirQuake is a total conversion (players/monsters replaced by vehicles), so
-# it requires maps built specifically for it -- see AIRQUAKE.TXT. This mod
-# folder also has ~20 generic vanilla-Quake DM maps mixed into maps/ that
-# happen to carry no vehicle spawn entities, plus airfox2c.bsp which is
-# actually a Quake II AirQuake2 map. Loading any of those breaks spawning.
+# it requires maps built specifically for it -- see AIRQUAKE.TXT. The
+# archive's maps/ folder also has a bunch of maps for "AirQuake2", an
+# unrelated Quake II mod that happens to share the name and ship in the
+# same archive -- despite AirQuake-sounding names/readmes, those are a
+# different BSP format entirely and fail outright under this engine.
+# Confirmed empirically (not just from reading readmes) by spinning up
+# every .bsp in the archive and checking for load errors.
 #
-# DEFAULT_MAP must be one of the maps confirmed (via their .txt readmes) to
-# require/support AirQuake TC for Quake 1, and must match one of
+# DEFAULT_MAP must be one of the maps confirmed to actually load and
+# support AirQuake TC for Quake 1, and must match one of
 # game/airquake/server.cfg's sv_votable_maps entries, which the engine uses
 # to validate /vote requests -- the two are kept in sync manually since one
 # lives in shell and the other in a cvar the engine reads at runtime.
