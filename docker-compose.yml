@@ -70,6 +70,17 @@ services:
     image: quake-manage
     container_name: quake-manage
     restart: unless-stopped
+    # The default docker-default AppArmor profile blocks ptrace-read of
+    # other processes' /proc/[pid] entries even via the /host/proc bind
+    # mount below -- harmless (each failed read is caught and that PID is
+    # just skipped in Top Processes) but it re-fires on every dashboard
+    # poll and was found to account for ~80% of this host's total journal
+    # volume, crowding out real diagnostics. This container's whole job is
+    # reading host-wide process/network state via that bind mount, so the
+    # confinement isn't buying anything here -- unconfined instead of
+    # fighting it PID by PID.
+    security_opt:
+      - apparmor=unconfined
     ports:
       - "26200:26200/tcp"
     volumes:
