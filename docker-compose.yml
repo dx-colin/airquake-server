@@ -45,9 +45,11 @@ services:
     depends_on:
       - nexquake
 
-  # Internal-only management/monitoring dashboard: host CPU/RAM/disk,
-  # currently-connected players (login state, IP, session frags/deaths),
-  # and live map/rule changes -- see manage/quake_manage.py and
+  # Internal-only OrangePi + AirQuake management dashboard: host CPU/RAM/
+  # disk, top processes, active network connections (all ports, host-wide
+  # -- not just this container's own), currently-connected players (login
+  # state, IP, session frags/deaths), every registered account, and live
+  # map/rule changes -- see manage/quake_manage.py and
   # nexquake/server-patch/sv_accounts.c's "live management dashboard"
   # section for how it talks to nqserver (two files on the same shared
   # accounts volume, no new port/protocol on the engine side).
@@ -72,10 +74,16 @@ services:
     volumes:
       # Same directory nqserver's -accountsdir points at (see nexquake's
       # volumes below) -- read/write: reads live_status.json + server.cfg
-      # (for the map dropdown), writes admin_command.txt.
+      # (for the map dropdown) + accounts.dat (registered players), writes
+      # admin_command.txt.
       - /opt/airquake/airquake:/data
-      # Host stats -- read-only. /proc for CPU/load/memory, root fs for
-      # disk usage.
+      # Host stats -- read-only. /proc for CPU/load/memory/top-processes/
+      # network connections, root fs for disk usage. Network specifically
+      # reads /host/proc/1/net/* (PID 1's own namespace, i.e. the host's
+      # root namespace on a normal init) rather than /host/proc/net/* --
+      # that path is the /proc/self/net alias, which would resolve to
+      # this container's own near-empty namespace no matter whose /proc
+      # got bind-mounted here. See quake_manage.py's _read_net_table.
       - /proc:/host/proc:ro
       - /:/host/root:ro
     depends_on:

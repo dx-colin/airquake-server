@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-AirQuake Management Dashboard
-==============================
-LAN-only server management page: host resource stats, currently-connected
-players (login state, IP, session frags/deaths), and a control panel to
-change the map or live server settings.
+OrangePi / AirQuake Management Dashboard
+==========================================
+LAN-only management page for the whole host, not just the game: host
+resource stats, top processes, active network connections, currently-
+connected players (login state, IP, session frags/deaths), all registered
+accounts, and a control panel to change the map or live server settings.
 
 Talks to nqserver via two files it also reads/writes (see
 nexquake/server-patch/sv_accounts.c's "live management dashboard" section
@@ -14,6 +15,8 @@ for the engine side of this):
   - admin_command.txt -- write: a single pending console command, run
                           (as a trusted, server-console-equivalent command)
                           and deleted by the engine on its next frame.
+  - accounts.dat       -- read: every registered account (same file/format
+                          the engine itself reads/writes).
 
 No login of its own -- deliberately relies on network-level (LAN-only)
 trust instead, per explicit instruction. Do not expose this through
@@ -27,6 +30,7 @@ import argparse
 import http.server
 import threading
 from pathlib import Path
+from datetime import datetime, timezone
 from urllib.parse import parse_qs
 from html import escape
 
@@ -55,19 +59,152 @@ def _read_cpu_times():
     return idle, total
 
 
-def cpu_percent(sample_seconds=0.3):
-    first = _read_cpu_times()
-    if not first:
-        return None
+_CLK_TCK = os.sysconf("SC_CLK_TCK") if hasattr(os, "sysconf") else 100
+
+
+def _read_process_jiffies():
+    """{pid: (utime+stime jiffies, comm, rss_kb)} for every readable process."""
+    out = {}
+    try:
+        pids = [p for p in os.listdir(PROCFS) if p.isdigit()]
+    except OSError:
+        return out
+    for pid in pids:
+        try:
+            stat = (PROCFS / pid / "stat").read_text()
+            # comm is the first '(...)' field and may itself contain
+            # spaces/parens -- split on the *last* ')' to stay correct.
+            rparen = stat.rindex(")")
+            comm = stat[stat.index("(") + 1:rparen]
+            rest = stat[rparen + 2:].split()
+            utime, stime = int(rest[11]), int(rest[12])
+            rss_kb = None
+            try:
+                for line in (PROCFS / pid / "status").read_text().splitlines():
+                    if line.startswith("VmRSS:"):
+                        rss_kb = int(line.split()[1])
+                        break
+            except OSError:
+                pass
+            out[pid] = (utime + stime, comm, rss_kb)
+        except (OSError, ValueError, IndexError):
+            continue  # process exited mid-scan, or a /proc entry that isn't a real process
+    return out
+
+
+def sample_system(sample_seconds=0.3):
+    """One combined sampling pass: overall CPU% plus a per-process snapshot,
+    sharing a single sleep window instead of sampling twice separately."""
+    cpu_first = _read_cpu_times()
+    proc_first = _read_process_jiffies()
     time.sleep(sample_seconds)
-    second = _read_cpu_times()
-    if not second:
-        return None
-    idle_delta = second[0] - first[0]
-    total_delta = second[1] - first[1]
-    if total_delta <= 0:
-        return None
-    return round((1 - idle_delta / total_delta) * 100, 1)
+    cpu_second = _read_cpu_times()
+    proc_second = _read_process_jiffies()
+
+    cpu_pct = None
+    if cpu_first and cpu_second:
+        idle_delta = cpu_second[0] - cpu_first[0]
+        total_delta = cpu_second[1] - cpu_first[1]
+        if total_delta > 0:
+            cpu_pct = round((1 - idle_delta / total_delta) * 100, 1)
+
+    n_cpus = os.cpu_count() or 1
+    processes = []
+    for pid, (jiffies2, comm, rss_kb) in proc_second.items():
+        jiffies1 = proc_first.get(pid, (0, "", None))[0]
+        delta = jiffies2 - jiffies1
+        if delta <= 0:
+            continue
+        pct = round(delta / _CLK_TCK / sample_seconds / n_cpus * 100, 1)
+        processes.append({
+            "pid": pid, "name": comm, "cpu_pct": pct,
+            "rss_mb": round(rss_kb / 1024, 1) if rss_kb else None,
+        })
+    processes.sort(key=lambda p: p["cpu_pct"], reverse=True)
+    return cpu_pct, processes
+
+
+# ── network connections ──────────────────────────────────────────────────
+#
+# Reflects CURRENTLY OPEN sockets (listening + established), read straight
+# from /proc/net/{tcp,tcp6,udp,udp6} -- there is no attempt/reject history
+# here (that would need firewall packet logging, which isn't set up on
+# this host), just what's live right now.
+
+_TCP_STATES = {
+    "01": "ESTABLISHED", "02": "SYN_SENT", "03": "SYN_RECV",
+    "04": "FIN_WAIT1", "05": "FIN_WAIT2", "06": "TIME_WAIT",
+    "07": "CLOSE", "08": "CLOSE_WAIT", "09": "LAST_ACK",
+    "0A": "LISTEN", "0B": "CLOSING",
+}
+
+
+def _decode_addr(hexaddr: str, is_v6: bool) -> str:
+    host_hex, port_hex = hexaddr.split(":")
+    port = int(port_hex, 16)
+    if is_v6:
+        raw = bytes.fromhex(host_hex)
+        # /proc stores each 32-bit word little-endian; six of the eight
+        # groups in a IPv4-mapped ::ffff:a.b.c.d address collapse to
+        # zero/ffff, which is by far the common case on this host -- show
+        # the mapped IPv4 form when it applies, else a raw hex fallback
+        # (good enough for a diagnostics page, not a full-fidelity
+        # IPv6 renderer).
+        words = [raw[i:i + 4][::-1] for i in range(0, 16, 4)]
+        flat = b"".join(words)
+        if flat == b"\x00" * 16:
+            host = "::"  # the common "any address" case -- not IPv4-mapped, just all-zero
+        elif flat[:12] == b"\x00" * 10 + b"\xff\xff":
+            host = ".".join(str(b) for b in flat[12:])
+        else:
+            # Standard IPv6 notation (8 groups of 4 hex digits), not a flat
+            # hex dump -- good enough for a diagnostics page, not a full
+            # RFC 5952 zero-compression renderer.
+            host = ":".join(flat[i:i + 2].hex() for i in range(0, 16, 2))
+    else:
+        raw = bytes.fromhex(host_hex)[::-1]
+        host = ".".join(str(b) for b in raw)
+    if ":" in host:
+        return f"[{host}]:{port}"  # bracket IPv6 -- its own colons would else be ambiguous with the port separator
+    return f"{host}:{port}"
+
+
+def _read_net_table(name: str, is_v6: bool, proto: str):
+    rows = []
+    # Deliberately NOT PROCFS/"net"/name: that path is the /proc/self/net
+    # alias, which resolves to *this container's own* network namespace no
+    # matter whose /proc got bind-mounted -- always near-empty, since this
+    # container only makes a couple of outbound calls itself. PID 1's own
+    # /net/ subtree, by contrast, genuinely reflects whichever namespace
+    # PID 1 is in -- the host's root namespace on a normal (non-container)
+    # Linux init, which is what we actually want here.
+    try:
+        lines = (PROCFS / "1" / "net" / name).read_text().splitlines()[1:]
+    except OSError:
+        return rows
+    for line in lines:
+        parts = line.split()
+        if len(parts) < 4:
+            continue
+        local = _decode_addr(parts[1], is_v6)
+        remote = _decode_addr(parts[2], is_v6)
+        state = _TCP_STATES.get(parts[3], parts[3]) if proto == "tcp" else ""
+        rows.append({"proto": proto + ("6" if is_v6 else ""), "local": local,
+                      "remote": remote, "state": state})
+    return rows
+
+
+def network_connections():
+    rows = []
+    rows += _read_net_table("tcp", False, "tcp")
+    rows += _read_net_table("tcp6", True, "tcp")
+    rows += _read_net_table("udp", False, "udp")
+    rows += _read_net_table("udp6", True, "udp")
+    # Listening sockets first (what's exposed), then everything else by
+    # local port, so the table reads top-down as "what's open" before
+    # "what's currently talking to what".
+    rows.sort(key=lambda r: (r["state"] != "LISTEN", int(r["local"].rsplit(":", 1)[1])))
+    return rows
 
 
 def mem_stats():
@@ -135,6 +272,36 @@ def send_command(path: Path, command: str) -> None:
     # SV_Accounts_ProcessPendingCommand for why this is an accepted,
     # documented limitation rather than something queued/locked.
     path.write_text(command + "\n", encoding="utf-8")
+
+
+def read_accounts(accounts_dat_path: Path):
+    """Same colon-delimited format the engine itself reads/writes -- see
+    sv_accounts.c's _SV_Accounts_Save: username:hash:is_admin:kills:deaths:
+    playtime_seconds:created_at:last_login. The hash is never rendered."""
+    try:
+        lines = accounts_dat_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return []
+    accounts = []
+    for line in lines:
+        parts = line.split(":")
+        if len(parts) != 8:
+            continue  # skip anything that doesn't match the format rather than guess
+        username, _hash, is_admin, kills, deaths, playtime, created_at, last_login = parts
+        try:
+            accounts.append({
+                "username": username,
+                "is_admin": is_admin == "1",
+                "kills": int(kills),
+                "deaths": int(deaths),
+                "playtime_seconds": int(playtime),
+                "created_at": int(created_at),
+                "last_login": int(last_login),
+            })
+        except ValueError:
+            continue
+    accounts.sort(key=lambda a: a["last_login"], reverse=True)
+    return accounts
 
 
 def read_votable_maps(server_cfg_path: Path):
@@ -230,8 +397,7 @@ def _bar(pct):
     return f'<div class="bar-wrap"><div class="bar {cls}" style="width:{min(pct, 100)}%"></div></div>'
 
 
-def render_host_cards():
-    cpu = cpu_percent()
+def render_host_cards(cpu):
     mem = mem_stats()
     disk = disk_stats()
     load = load_avg()
@@ -252,6 +418,81 @@ def render_host_cards():
         cards += card("—", "Disk")
     cards += card(load[0] if load else "—", "Load avg (1m)")
     return f'<div class="grid">{cards}</div>'
+
+
+def render_top_processes(processes, limit=12):
+    top = [p for p in processes if p["cpu_pct"] > 0][:limit]
+    if not top:
+        return '<div class="panel"><div class="empty">No process activity this sample.</div></div>'
+    rows = ""
+    for p in top:
+        mem = f'{p["rss_mb"]} MB' if p["rss_mb"] is not None else "—"
+        rows += f"""
+        <tr>
+          <td>{escape(p["pid"])}</td>
+          <td><strong>{escape(p["name"])}</strong></td>
+          <td class="neutral">{p["cpu_pct"]}%</td>
+          <td>{mem}</td>
+        </tr>"""
+    return f"""
+    <table>
+      <thead><tr><th>PID</th><th>Process</th><th>CPU</th><th>Memory</th></tr></thead>
+      <tbody>{rows}</tbody>
+    </table>"""
+
+
+def render_network(connections, limit=60):
+    if not connections:
+        return '<div class="panel"><div class="empty">No connection data available.</div></div>'
+    rows = ""
+    for c in connections[:limit]:
+        state_cls = "positive" if c["state"] == "LISTEN" else ("neutral" if c["state"] == "ESTABLISHED" else "")
+        state_badge = f'<span class="badge {state_cls}">{escape(c["state"])}</span>' if c["state"] else \
+            '<span class="badge guest">—</span>'
+        rows += f"""
+        <tr>
+          <td><span class="badge">{escape(c["proto"])}</span></td>
+          <td>{escape(c["local"])}</td>
+          <td>{escape(c["remote"])}</td>
+          <td>{state_badge}</td>
+        </tr>"""
+    note = f'<p class="meta">Showing {min(limit, len(connections))} of {len(connections)} open sockets -- ' \
+           f'these are currently active connections, not a history of connection attempts ' \
+           f'(that would need firewall packet logging, not set up on this host).</p>'
+    return f"""
+    {note}
+    <table>
+      <thead><tr><th>Proto</th><th>Local</th><th>Remote</th><th>State</th></tr></thead>
+      <tbody>{rows}</tbody>
+    </table>"""
+
+
+def render_registered_players(accounts):
+    if not accounts:
+        return '<div class="panel"><div class="empty">No registered accounts.</div></div>'
+    rows = ""
+    for a in accounts:
+        role = '<span class="badge admin">admin</span>' if a["is_admin"] else '<span class="badge">player</span>'
+        hours = round(a["playtime_seconds"] / 3600, 1)
+        created = datetime.fromtimestamp(a["created_at"], tz=timezone.utc).strftime("%Y-%m-%d")
+        last_login = datetime.fromtimestamp(a["last_login"], tz=timezone.utc).strftime("%Y-%m-%d %H:%M")
+        rows += f"""
+        <tr>
+          <td><strong>{escape(a["username"])}</strong></td>
+          <td>{role}</td>
+          <td class="positive">{a["kills"]}</td>
+          <td class="negative">{a["deaths"]}</td>
+          <td>{hours}h</td>
+          <td>{created}</td>
+          <td>{last_login}</td>
+        </tr>"""
+    return f"""
+    <table>
+      <thead>
+        <tr><th>Username</th><th>Role</th><th>Kills</th><th>Deaths</th><th>Playtime</th><th>Registered</th><th>Last Login</th></tr>
+      </thead>
+      <tbody>{rows}</tbody>
+    </table>"""
 
 
 def render_players(status):
@@ -340,13 +581,13 @@ def render_management(status, maps):
     </div>"""
 
 
-def render_page(status, maps, message=None):
+def render_page(status, maps, accounts, cpu, processes, connections, message=None):
     map_name = escape(status.get("map", "unknown")) if status else "unknown"
     hostname = escape(status.get("hostname", "")) if status else ""
     updated = status.get("updated") if status else None
     age = f"{int(time.time() - updated)}s ago" if updated else "unknown"
     stale_warn = "" if status and (time.time() - updated) < 15 else \
-        '<p style="color:#f44336">Warning: status looks stale -- is nqserver running?</p>'
+        '<p style="color:#f44336">Warning: game status looks stale -- is nqserver running?</p>'
 
     msg_html = f'<p style="color:#00e5ff;margin-bottom:16px">{escape(message)}</p>' if message else ""
 
@@ -356,21 +597,30 @@ def render_page(status, maps, message=None):
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="refresh" content="10">
-  <title>AirQuake Management</title>
+  <title>OrangePi Management</title>
   <style>{_CSS}</style>
 </head>
 <body>
 <div class="section">
-  <h1>AIRQUAKE MANAGEMENT</h1>
-  <p class="meta">{hostname} &nbsp;|&nbsp; map: <strong>{map_name}</strong> &nbsp;|&nbsp; status updated {age}</p>
+  <h1>ORANGEPI MANAGEMENT</h1>
+  <p class="meta">AirQuake: {hostname} &nbsp;|&nbsp; map: <strong>{map_name}</strong> &nbsp;|&nbsp; status updated {age}</p>
   {stale_warn}
   {msg_html}
 
   <h2>Host</h2>
-  {render_host_cards()}
+  {render_host_cards(cpu)}
 
-  <h2>Players</h2>
+  <h2>Top Processes</h2>
+  {render_top_processes(processes)}
+
+  <h2>Network Connections</h2>
+  {render_network(connections)}
+
+  <h2>Current Players</h2>
   {render_players(status)}
+
+  <h2>Registered Players</h2>
+  {render_registered_players(accounts)}
 
   <h2>Server Control</h2>
   {render_management(status, maps)}
@@ -385,6 +635,7 @@ class ManageHandler(http.server.BaseHTTPRequestHandler):
     status_path: Path
     command_path: Path
     server_cfg_path: Path
+    accounts_path: Path
 
     def _send_html(self, body: str, code=200):
         data = body.encode("utf-8")
@@ -401,7 +652,10 @@ class ManageHandler(http.server.BaseHTTPRequestHandler):
             return
         status = read_live_status(self.status_path)
         maps = read_votable_maps(self.server_cfg_path)
-        self._send_html(render_page(status, maps))
+        accounts = read_accounts(self.accounts_path)
+        cpu, processes = sample_system()
+        connections = network_connections()
+        self._send_html(render_page(status, maps, accounts, cpu, processes, connections))
 
     def do_POST(self):  # noqa: N802
         if self.path != "/action":
@@ -438,9 +692,9 @@ class ManageHandler(http.server.BaseHTTPRequestHandler):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="AirQuake management dashboard")
+    ap = argparse.ArgumentParser(description="OrangePi / AirQuake management dashboard")
     ap.add_argument("--accounts-dir", required=True,
-                     help="Directory containing live_status.json / admin_command.txt (shared with nqserver)")
+                     help="Directory containing live_status.json / admin_command.txt / accounts.dat (shared with nqserver)")
     ap.add_argument("--server-cfg", required=True,
                      help="Path to server.cfg, for reading sv_votable_maps")
     ap.add_argument("--port", type=int, default=26200)
@@ -448,9 +702,10 @@ def main():
 
     ManageHandler.status_path = Path(args.accounts_dir) / "live_status.json"
     ManageHandler.command_path = Path(args.accounts_dir) / "admin_command.txt"
+    ManageHandler.accounts_path = Path(args.accounts_dir) / "accounts.dat"
     ManageHandler.server_cfg_path = Path(args.server_cfg)
 
-    print(f"Starting AirQuake management dashboard on http://0.0.0.0:{args.port}")
+    print(f"Starting OrangePi management dashboard on http://0.0.0.0:{args.port}")
     httpd = http.server.HTTPServer(("0.0.0.0", args.port), ManageHandler)
     httpd.serve_forever()
 

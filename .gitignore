@@ -31,3 +31,7 @@ nexquake/game/airquake/accounts.dat
 # integration (see docker-compose.yml's real /opt/airquake/airquake mount
 # for the actual shared account store).
 nexquake/local-accounts/
+
+# Python build artifacts from local syntax-checking (python3 -m py_compile)
+__pycache__/
+*.pyc
