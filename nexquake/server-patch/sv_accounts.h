@@ -61,6 +61,14 @@ void SV_Accounts_OnDisconnect (struct client_s *cl);
 // have been called first. Returns false on a validation failure.
 qboolean SV_Accounts_CreateAdmin (const char *username, const char *password);
 
+// Sets an existing account's admin flag (does not create the account).
+// Also updates the live client_t if that account is currently connected
+// and authenticated, so a demotion/promotion takes effect immediately
+// rather than on next login. Returns false and fills errmsg if no such
+// account exists.
+qboolean SV_Accounts_SetRole (const char *username, qboolean is_admin,
+	char *errmsg, size_t errmsg_size);
+
 // Inspects text about to go out via SV_BroadcastPrintf (i.e. QuakeC's
 // bprint, which is how AirQuake's compiled progs.dat announces kills/
 // deaths) and, if it matches a kill/death message, attributes it to

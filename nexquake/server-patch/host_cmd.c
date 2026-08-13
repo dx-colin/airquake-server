@@ -1332,6 +1332,56 @@ void Host_Admin_f (void)
 
 /*
 ==================
+Host_SetRole_f
+
+setrole <username> <admin|player>
+
+Console/admin_command.txt only (never a client-issued command -- unlike
+"admin", which is gated on the *caller's own* is_admin flag, this changes
+someone else's account, so it's restricted to the same fully-trusted
+src_command path server console/FIFO input already uses). Targets an
+existing account by username; does not create one. See
+SV_Accounts_SetRole for the actual account-store + live-client update.
+==================
+*/
+void Host_SetRole_f (void)
+{
+	const char	*username, *role;
+	qboolean	want_admin;
+	char		errmsg[SV_ACCOUNT_ERR_LEN];
+
+	if (cmd_source != src_command)
+		return;
+
+	if (Cmd_Argc () != 3)
+	{
+		Con_Printf ("Usage: setrole <username> <admin|player>\n");
+		return;
+	}
+
+	username = Cmd_Argv (1);
+	role = Cmd_Argv (2);
+	if (Q_strcasecmp ((char *)role, "admin") == 0)
+		want_admin = true;
+	else if (Q_strcasecmp ((char *)role, "player") == 0)
+		want_admin = false;
+	else
+	{
+		Con_Printf ("setrole: role must be 'admin' or 'player'\n");
+		return;
+	}
+
+	if (!SV_Accounts_SetRole (username, want_admin, errmsg, sizeof (errmsg)))
+	{
+		Con_Printf ("setrole: %s\n", errmsg);
+		return;
+	}
+
+	Con_Printf ("setrole: '%s' is now %s\n", username, want_admin ? "admin" : "player");
+}
+
+/*
+==================
 Host_Color_f
 ==================
 */
@@ -2102,6 +2152,7 @@ void Host_InitCommands (void)
 	Cmd_AddCommand ("logout", Host_Logout_f);
 	Cmd_AddCommand ("vote", Host_Vote_f);
 	Cmd_AddCommand ("admin", Host_Admin_f);
+	Cmd_AddCommand ("setrole", Host_SetRole_f);
 	Cmd_AddCommand ("color", Host_Color_f);
 	Cmd_AddCommand ("kill", Host_Kill_f);
 	Cmd_AddCommand ("pause", Host_Pause_f);

@@ -497,6 +497,35 @@ qboolean SV_Accounts_CreateAdmin (const char *username, const char *password)
 	return true;
 }
 
+qboolean SV_Accounts_SetRole (const char *username, qboolean is_admin,
+	char *errmsg, size_t errmsg_size)
+{
+	account_t	*a;
+	int		i;
+
+	a = _SV_Accounts_Find (username);
+	if (!a)
+	{
+		_sv_strlcpy (errmsg, "no such account", errmsg_size);
+		return false;
+	}
+
+	a->is_admin = is_admin;
+	_SV_Accounts_Save ();
+
+	// If that account is currently connected and authenticated, update the
+	// live client_t too -- otherwise a role change wouldn't take effect
+	// until the next login.
+	for (i = 0; i < svs.maxclients; i++)
+	{
+		client_t *cl = &svs.clients[i];
+		if (cl->active && cl->authenticated && strcmp (cl->account_name, a->username) == 0)
+			cl->is_admin = is_admin;
+	}
+
+	return true;
+}
+
 // ── kill/death attribution ──────────────────────────────────────────────
 
 static client_t *_SV_Accounts_FindClientByName (const char *name)

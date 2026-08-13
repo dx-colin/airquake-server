@@ -367,6 +367,7 @@ def render_registered_players(accounts):
         hours = round(a["playtime_seconds"] / 3600, 1)
         created = datetime.fromtimestamp(a["created_at"], tz=timezone.utc).strftime("%Y-%m-%d")
         last_login = datetime.fromtimestamp(a["last_login"], tz=timezone.utc).strftime("%Y-%m-%d %H:%M")
+        username_attr = escape(a["username"], quote=True)
         rows += f"""
         <tr>
           <td><strong>{escape(a["username"])}</strong></td>
@@ -376,11 +377,22 @@ def render_registered_players(accounts):
           <td>{hours}h</td>
           <td>{created}</td>
           <td>{last_login}</td>
+          <td>
+            <form class="inline" method="post" action="/action">
+              <input type="hidden" name="cmd" value="setrole">
+              <input type="hidden" name="target" value="{username_attr}">
+              <select name="role">
+                <option value="player"{"" if a["is_admin"] else " selected"}>player</option>
+                <option value="admin"{" selected" if a["is_admin"] else ""}>admin</option>
+              </select>
+              <button type="submit" onclick="return confirm('Change role for {escape(a["username"])}?')">Set</button>
+            </form>
+          </td>
         </tr>"""
     return f"""
     <table>
       <thead>
-        <tr><th>Username</th><th>Role</th><th>Kills</th><th>Deaths</th><th>Playtime</th><th>Registered</th><th>Last Login</th></tr>
+        <tr><th>Username</th><th>Role</th><th>Kills</th><th>Deaths</th><th>Playtime</th><th>Registered</th><th>Last Login</th><th></th></tr>
       </thead>
       <tbody>{rows}</tbody>
     </table>"""
@@ -562,6 +574,13 @@ class ManageHandler(http.server.BaseHTTPRequestHandler):
         elif cmd == "hostname":
             send_command(self.command_path, f'hostname "{target}"')
             message = f"Sent: hostname {target}"
+        elif cmd == "setrole" and target:
+            role = (fields.get("role", [""])[0] or "").strip()
+            if role in ("admin", "player"):
+                send_command(self.command_path, f'setrole "{target}" {role}')
+                message = f"Sent: setrole {target} {role}"
+            else:
+                message = "Invalid role."
         else:
             message = "Ignored empty or unrecognized command."
 
