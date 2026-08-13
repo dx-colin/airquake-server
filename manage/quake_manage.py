@@ -3,9 +3,9 @@
 OrangePi / AirQuake Management Dashboard
 ==========================================
 LAN-only management page for the whole host, not just the game: host
-resource stats, top processes, active network connections, currently-
-connected players (login state, IP, session frags/deaths), all registered
-accounts, and a control panel to change the map or live server settings.
+resource stats, top processes, currently-connected players (login state,
+IP, session frags/deaths), all registered accounts, and a control panel
+to change the map or live server settings.
 
 Talks to nqserver via two files it also reads/writes (see
 nexquake/server-patch/sv_accounts.c's "live management dashboard" section
@@ -122,89 +122,6 @@ def sample_system(sample_seconds=0.3):
         })
     processes.sort(key=lambda p: p["cpu_pct"], reverse=True)
     return cpu_pct, processes
-
-
-# ── network connections ──────────────────────────────────────────────────
-#
-# Reflects CURRENTLY OPEN sockets (listening + established), read straight
-# from /proc/net/{tcp,tcp6,udp,udp6} -- there is no attempt/reject history
-# here (that would need firewall packet logging, which isn't set up on
-# this host), just what's live right now.
-
-_TCP_STATES = {
-    "01": "ESTABLISHED", "02": "SYN_SENT", "03": "SYN_RECV",
-    "04": "FIN_WAIT1", "05": "FIN_WAIT2", "06": "TIME_WAIT",
-    "07": "CLOSE", "08": "CLOSE_WAIT", "09": "LAST_ACK",
-    "0A": "LISTEN", "0B": "CLOSING",
-}
-
-
-def _decode_addr(hexaddr: str, is_v6: bool) -> str:
-    host_hex, port_hex = hexaddr.split(":")
-    port = int(port_hex, 16)
-    if is_v6:
-        raw = bytes.fromhex(host_hex)
-        # /proc stores each 32-bit word little-endian; six of the eight
-        # groups in a IPv4-mapped ::ffff:a.b.c.d address collapse to
-        # zero/ffff, which is by far the common case on this host -- show
-        # the mapped IPv4 form when it applies, else a raw hex fallback
-        # (good enough for a diagnostics page, not a full-fidelity
-        # IPv6 renderer).
-        words = [raw[i:i + 4][::-1] for i in range(0, 16, 4)]
-        flat = b"".join(words)
-        if flat == b"\x00" * 16:
-            host = "::"  # the common "any address" case -- not IPv4-mapped, just all-zero
-        elif flat[:12] == b"\x00" * 10 + b"\xff\xff":
-            host = ".".join(str(b) for b in flat[12:])
-        else:
-            # Standard IPv6 notation (8 groups of 4 hex digits), not a flat
-            # hex dump -- good enough for a diagnostics page, not a full
-            # RFC 5952 zero-compression renderer.
-            host = ":".join(flat[i:i + 2].hex() for i in range(0, 16, 2))
-    else:
-        raw = bytes.fromhex(host_hex)[::-1]
-        host = ".".join(str(b) for b in raw)
-    if ":" in host:
-        return f"[{host}]:{port}"  # bracket IPv6 -- its own colons would else be ambiguous with the port separator
-    return f"{host}:{port}"
-
-
-def _read_net_table(name: str, is_v6: bool, proto: str):
-    rows = []
-    # Deliberately NOT PROCFS/"net"/name: that path is the /proc/self/net
-    # alias, which resolves to *this container's own* network namespace no
-    # matter whose /proc got bind-mounted -- always near-empty, since this
-    # container only makes a couple of outbound calls itself. PID 1's own
-    # /net/ subtree, by contrast, genuinely reflects whichever namespace
-    # PID 1 is in -- the host's root namespace on a normal (non-container)
-    # Linux init, which is what we actually want here.
-    try:
-        lines = (PROCFS / "1" / "net" / name).read_text().splitlines()[1:]
-    except OSError:
-        return rows
-    for line in lines:
-        parts = line.split()
-        if len(parts) < 4:
-            continue
-        local = _decode_addr(parts[1], is_v6)
-        remote = _decode_addr(parts[2], is_v6)
-        state = _TCP_STATES.get(parts[3], parts[3]) if proto == "tcp" else ""
-        rows.append({"proto": proto + ("6" if is_v6 else ""), "local": local,
-                      "remote": remote, "state": state})
-    return rows
-
-
-def network_connections():
-    rows = []
-    rows += _read_net_table("tcp", False, "tcp")
-    rows += _read_net_table("tcp6", True, "tcp")
-    rows += _read_net_table("udp", False, "udp")
-    rows += _read_net_table("udp6", True, "udp")
-    # Listening sockets first (what's exposed), then everything else by
-    # local port, so the table reads top-down as "what's open" before
-    # "what's currently talking to what".
-    rows.sort(key=lambda r: (r["state"] != "LISTEN", int(r["local"].rsplit(":", 1)[1])))
-    return rows
 
 
 def mem_stats():
@@ -441,32 +358,6 @@ def render_top_processes(processes, limit=12):
     </table>"""
 
 
-def render_network(connections, limit=60):
-    if not connections:
-        return '<div class="panel"><div class="empty">No connection data available.</div></div>'
-    rows = ""
-    for c in connections[:limit]:
-        state_cls = "positive" if c["state"] == "LISTEN" else ("neutral" if c["state"] == "ESTABLISHED" else "")
-        state_badge = f'<span class="badge {state_cls}">{escape(c["state"])}</span>' if c["state"] else \
-            '<span class="badge guest">—</span>'
-        rows += f"""
-        <tr>
-          <td><span class="badge">{escape(c["proto"])}</span></td>
-          <td>{escape(c["local"])}</td>
-          <td>{escape(c["remote"])}</td>
-          <td>{state_badge}</td>
-        </tr>"""
-    note = f'<p class="meta">Showing {min(limit, len(connections))} of {len(connections)} open sockets -- ' \
-           f'these are currently active connections, not a history of connection attempts ' \
-           f'(that would need firewall packet logging, not set up on this host).</p>'
-    return f"""
-    {note}
-    <table>
-      <thead><tr><th>Proto</th><th>Local</th><th>Remote</th><th>State</th></tr></thead>
-      <tbody>{rows}</tbody>
-    </table>"""
-
-
 def render_registered_players(accounts):
     if not accounts:
         return '<div class="panel"><div class="empty">No registered accounts.</div></div>'
@@ -581,7 +472,7 @@ def render_management(status, maps):
     </div>"""
 
 
-def render_page(status, maps, accounts, cpu, processes, connections, message=None):
+def render_page(status, maps, accounts, cpu, processes, message=None):
     map_name = escape(status.get("map", "unknown")) if status else "unknown"
     hostname = escape(status.get("hostname", "")) if status else ""
     updated = status.get("updated") if status else None
@@ -612,9 +503,6 @@ def render_page(status, maps, accounts, cpu, processes, connections, message=Non
 
   <h2>Top Processes</h2>
   {render_top_processes(processes)}
-
-  <h2>Network Connections</h2>
-  {render_network(connections)}
 
   <h2>Current Players</h2>
   {render_players(status)}
@@ -654,8 +542,7 @@ class ManageHandler(http.server.BaseHTTPRequestHandler):
         maps = read_votable_maps(self.server_cfg_path)
         accounts = read_accounts(self.accounts_path)
         cpu, processes = sample_system()
-        connections = network_connections()
-        self._send_html(render_page(status, maps, accounts, cpu, processes, connections))
+        self._send_html(render_page(status, maps, accounts, cpu, processes))
 
     def do_POST(self):  # noqa: N802
         if self.path != "/action":
